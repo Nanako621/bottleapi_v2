@@ -1,0 +1,12 @@
+aiomqtt==2.4.0
+bottle==0.13.4
+certifi==2025.8.3
+cffi==2.0.0
+gevent==25.9.1
+gevent-websocket==0.10.1
+greenlet==3.2.4
+paho-mqtt==2.1.0
+pycparser==2.23
+python-dotenv==1.1.1
+zope.event==6.0
+zope.interface==8.0

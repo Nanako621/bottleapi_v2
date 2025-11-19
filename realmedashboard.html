@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>智慧健康IoT檢測</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg: #e8f4ff;
+      --nav-bg: #0b3d91;
+      --nav-border: #0b3d91;
+      --primary: #0b5ed7;
+      --primary-soft: #dbeafe;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --radius: 16px;
+      --gap: 18px;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', 'Helvetica Neue', Arial;
+      background:var(--bg);
+      color:#0f172a;
+      font-size:18px; /* 基準字體放大，方便高齡閱讀 */
+    }
+
+    .page{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* 上方藍色導覽列 */
+    .top-nav{
+      position:sticky;
+      top:0;
+      z-index:20;
+      background:var(--nav-bg);
+      border-bottom:1px solid var(--nav-border);
+      color:#fff;
+    }
+    .top-nav-inner{
+      max-width:1120px;
+      margin:0 auto;
+      padding:12px 22px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      box-sizing:border-box;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .brand-logo{
+      width:38px;
+      height:38px;
+      border-radius:999px;
+      background:linear-gradient(135deg,#2563eb,#1d4ed8);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      font-weight:800;
+      font-size:22px;
+    }
+    .brand-text{
+      display:flex;
+      flex-direction:column;
+    }
+    .brand-title{
+      font-size:20px;
+      font-weight:700;
+      color:#e0ecff;
+    }
+    .brand-sub{
+      font-size:14px;
+      color:#c7d2fe;
+    }
+
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      font-size:16px;
+    }
+    .nav-link{
+      color:#bfdbfe;
+      text-decoration:none;
+      padding:6px 12px;
+      border-radius:999px;
+    }
+    .nav-link.active{
+      color:#0b3d91;
+      background:#ffffff;
+      font-weight:600;
+    }
+
+    .container{
+      max-width:1120px;
+      margin:0 auto;
+      padding:24px 20px 28px;
+      box-sizing:border-box;
+      flex:1;
+    }
+
+    /* Hero 區塊 */
+    .hero{
+      background:linear-gradient(145deg,#ffffff,#e0edff);
+      border-radius:22px;
+      padding:22px 20px 20px;
+      box-shadow:0 8px 20px rgba(15,23,42,0.12);
+      border:1px solid #c7d2fe;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .hero-title{
+      font-size:22px;
+      font-weight:700;
+      color:#0b3d91;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .hero-pill{
+      font-size:13px;
+      padding:3px 10px;
+      border-radius:999px;
+      background:#0b5ed7;
+      color:white;
+    }
+    .hero-desc{
+      font-size:16px;
+      color:#475569;
+      line-height:1.6;
+    }
+    .hero-meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:4px;
+      font-size:15px;
+      color:#1d4ed8;
+    }
+    .hero-tag{
+      padding:4px 10px;
+      border-radius:999px;
+      background:#dbeafe;
+      color:#1e293b;
+    }
+
+    .data-panel{
+      margin-top:20px;
+    }
+
+    .patient-vitals{
+      background:#ffffff;
+      border-radius:18px;
+      padding:14px 16px;
+      box-shadow:0 4px 12px rgba(15,23,42,0.08);
+      border:1px solid #cbd5f5;
+      display:flex;
+      gap:16px;
+      align-items:center;
+      flex-wrap:wrap;
+      font-size:18px;
+      color:#0f172a;
+    }
+    .pv-item{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .pv-label{
+      color:#6b7280;
+    }
+    #edit-hw-btn,
+    #edit-info-btn{
+      padding:6px 14px;
+      cursor:pointer;
+      background:#0b5ed7;
+      color:white;
+      border:none;
+      border-radius:999px;
+      font-size:16px;
+    }
+
+    .bmi-good{
+      color:#16a34a;
+      font-weight:700;
+    }
+    .bmi-warn{
+      color:#ea580c;
+      font-weight:700;
+    }
+    .bmi-bad{
+      color:#dc2626;
+      font-weight:700;
+    }
+
+    #bmi_note{
+      font-size:15px;
+      max-width:320px;
+      line-height:1.5;
+    }
+
+    .grid-title{
+      margin-top:20px;
+      font-size:18px;
+      font-weight:600;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .grid-title span{
+      font-size:15px;
+      color:#64748b;
+      font-weight:400;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:var(--gap);
+      margin-top:12px;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:0 6px 16px rgba(15,23,42,0.08);
+      border:1px solid #dbeafe;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      cursor:pointer;
+      transition:transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
+      position:relative;
+    }
+    .card:hover{
+      transform:translateY(-2px);
+      box-shadow:0 10px 24px rgba(15,23,42,0.14);
+      border-color:#93c5fd;
+    }
+
+    .card-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .card-title-wrap{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .card-icon{
+      width:32px;
+      height:32px;
+      border-radius:999px;
+      background:#dbeafe;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+      color:#1d4ed8;
+      flex-shrink:0;
+    }
+    .card h3{
+      margin:0;
+      font-size:18px;
+      color:#0f172a;
+    }
+
+    .value-row{
+      display:flex;
+      align-items:baseline;
+      gap:8px;
+    }
+    .value{
+      font-size:34px;
+      font-weight:700;
+    }
+
+    .meta{
+      font-size:15px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+    .abnormal{
+      color:#dc2626;
+      font-weight:800;
+    }
+
+    .chart-wrap{
+      margin-top:10px;
+      padding:8px;
+      background:linear-gradient(180deg, #fff, #e0f2fe);
+      border-radius:12px;
+      height:190px;
+      box-sizing:border-box;
+    }
+
+    /* 衛教按鈕：大小高度一致 */
+    .edu-btn{
+      align-self:flex-end;
+      margin-top:4px;
+      padding:6px 16px;
+      font-size:15px;
+      border-radius:999px;
+      border:1px solid #93c5fd;
+      background:#eff6ff;
+      color:#1d4ed8;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:34px;
+      box-sizing:border-box;
+    }
+    .edu-btn:hover{
+      background:#1d4ed8;
+      color:#fff;
+      border-color:#1d4ed8;
+    }
+
+    /* 照護快捷選單 */
+    .menu{
+      position:relative;
+    }
+    .menu-panel{
+      position:absolute;
+      right:0;
+      top:38px;
+      background:#ffffff;
+      border-radius:12px;
+      box-shadow:0 10px 24px rgba(15,23,42,0.2);
+      padding:10px;
+      display:none;
+      min-width:230px;
+      z-index:10;
+      border:1px solid #e5e7eb;
+    }
+    .menu-panel.active{
+      display:block;
+    }
+    .action-btn{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:9px 10px;
+      border-radius:8px;
+      border:none;
+      cursor:pointer;
+      width:100%;
+      font-weight:600;
+      font-size:16px;
+      color:#ffffff;
+    }
+    .a-urgent{background:#ef4444;}
+    .a-drip{background:#fb923c;}
+    .a-leak{background:#eab308;color:#1f2937;}
+    .a-fix{background:#0ea5e9;}
+    .a-toilet{background:#10b981;}
+    .a-clean{background:#6b7280;}
+
+    .menu-btn{
+      background:#0b5ed7;
+      border:1px solid #bfdbfe;
+      color:#ffffff;
+      padding:7px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      font-size:16px;
+    }
+
+    @media (max-width:560px){
+      html,body{
+        font-size:17px;
+      }
+      .patient-vitals{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .hero{
+        padding:18px;
+      }
+    }
+
+    /* ===== 血氧教育彈窗 ===== */
+    #eduModal {
+      position: fixed;
+      z-index: 9999;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;            /* flex when開啟 */
+      justify-content: center;
+      align-items: center;
+    }
+
+    #eduModal .modal-content {
+      background: #ffffff;
+      width: 90%;
+      max-width: 1200px;
+      max-height: 95%;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow:0 10px 30px rgba(15,23,42,0.35);
+    }
+
+    #eduModal .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    #eduModal .modal-body img {
+      width: 100%;
+      border-radius: 10px;
+      display:block;
+    }
+
+    #eduModal .close-btn {
+      margin-top: 10px;
+      background: #0b5ed7;
+      color: white;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #eduModal .close-btn:hover{
+      background:#0946a3;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- 上方藍色導覽列 -->
+  <header class="top-nav">
+    <div class="top-nav-inner">
+      <div class="brand">
+        <div class="brand-logo">H</div>
+        <div class="brand-text">
+          <div class="brand-title">智慧健康小幫手</div>
+          <div class="brand-sub">IoT 生理監測 & 衛教資訊</div>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a class="nav-link active" href="#">生理監測儀表板</a>
+        <a class="nav-link" href="#">衛教圖文</a>
+        <div class="menu">
+          <button class="menu-btn" id="menuToggle">照護快捷功能 ▾</button>
+          <div class="menu-panel" id="menuPanel" aria-hidden="true">
+            <button class="action-btn a-urgent" data-action="urgent">緊急呼叫</button>
+            <button class="action-btn a-drip" data-action="change_drip">更換點滴</button>
+            <button class="action-btn a-leak" data-action="drip_leak">點滴漏針</button>
+            <button class="action-btn a-fix" data-action="repair">修報通知</button>
+            <button class="action-btn a-toilet" data-action="toilet">如廁協助</button>
+            <button class="action-btn a-clean" data-action="clean">環境清潔</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero 區 -->
+    <section class="hero">
+      <div class="hero-title">
+        智慧健康 IoT 生理監測
+        <span class="hero-pill">即時監測中</span>
+      </div>
+      <div class="hero-desc">
+        結合感測器與儀表板，即時掌握個案的生命徵象、體成分與睡眠狀態，
+        並提供對應的衛教說明，協助照護人員快速判讀與紀錄。
+      </div>
+      <div class="hero-meta">
+        <span class="hero-tag">✓ 即時數據</span>
+        <span class="hero-tag">✓ 趨勢圖一鍵展開</span>
+        <span class="hero-tag">✓ 搭配衛教提示</span>
+      </div>
+    </section>
+
+    <section class="data-panel">
+      <!-- 病患基本資訊 -->
+      <div class="patient-vitals">
+        <div class="pv-item">
+          <span class="pv-label">病患：</span>
+          <span id="patient-info-name">--</span>
+        </div>
+        <div class="pv-item">
+          <span class="pv-label">基本資料：</span>
+          <span id="patient-info-detail">--</span>
+        </div>
+        <button id="edit-info-btn">修改基本資料</button>
+      </div>
+
+      <div style="height:10px;"></div>
+
+      <!-- 身高體重 & BMI -->
+      <div class="patient-vitals">
+        <div class="pv-item">
+          <span class="pv-label">身高：</span><b id="height">--</b><span> cm</span>
+        </div>
+        <div class="pv-item">
+          <span class="pv-label">體重：</span><b id="weight">--</b><span> kg</span>
+        </div>
+        <div class="pv-item">
+          <span class="pv-label">BMI：</span><b id="bmi">--</b>
+        </div>
+        <div id="bmi_note"></div>
+        <button id="edit-hw-btn">修改身高體重</button>
+      </div>
+
+      <div class="grid-title">
+        生理監測卡片
+        <span>點擊同一排任一卡片，可展開 / 收合該排所有趨勢圖；右下角「衛教」可查看說明</span>
+      </div>
+
+      <!-- 卡片區 -->
+      <div class="grid" id="cards">
+        <!-- 第一排：脈搏 / 血氧 / 體溫 -->
+        <div class="card" data-key="pulse" data-row="1">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">心</div>
+              <h3>脈搏 (bpm)</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="pulse">--</div>
+          </div>
+          <div class="meta">正常約 60–100，下限或超過時會以紅字提醒。</div>
+          <button class="edu-btn" data-topic="pulse">衛教</button>
+        </div>
+
+        <div class="card" data-key="spo2" data-row="1">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">氧</div>
+              <h3>血氧 SpO₂ (%)</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="spo2">--</div>
+          </div>
+          <div class="meta">一般建議 ≥ 95%，低於 90% 為明顯異常需留意。</div>
+          <button class="edu-btn" data-topic="spo2">衛教</button>
+        </div>
+
+        <div class="card" data-key="temperature" data-row="1">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">溫</div>
+              <h3>體溫 (°C)</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="temp">--</div>
+          </div>
+          <div class="meta">約 36–37.5°C，低於 36 或高於 38 會標示為異常。</div>
+          <button class="edu-btn" data-topic="temperature">衛教</button>
+        </div>
+
+        <!-- 第二排：血壓 / 體脂 -->
+        <div class="card" data-key="bp_sys" data-row="2">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">壓</div>
+              <h3>血壓 - 收縮壓 (mmHg)</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="bp_sys">--</div>
+          </div>
+          <div class="meta">一般建議約 90–120 mmHg，過高或過低需評估。</div>
+          <button class="edu-btn" data-topic="bp_sys">衛教</button>
+        </div>
+
+        <div class="card" data-key="bp_dia" data-row="2">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">壓</div>
+              <h3>血壓 - 舒張壓 (mmHg)</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="bp_dia">--</div>
+          </div>
+          <div class="meta">約 60–80 mmHg，偏離範圍時會以紅字顯示。</div>
+          <button class="edu-btn" data-topic="bp_dia">衛教</button>
+        </div>
+
+        <div class="card" data-key="body_fat" data-row="2">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">脂</div>
+              <h3>體脂率 (%)</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="body_fat">--</div>
+          </div>
+          <div class="meta">約 10–30% 為常見範圍；依性別與年齡略有差異。</div>
+          <button class="edu-btn" data-topic="body_fat">衛教</button>
+        </div>
+
+        <!-- 第三排：水分 / BMR / 內臟脂肪 / 睡眠 -->
+        <div class="card" data-key="water" data-row="3">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">水</div>
+              <h3>身體水分 (%)</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="water">--</div>
+          </div>
+          <div class="meta">約 45–65%，偏低時可能代表脫水、需補充水分。</div>
+          <button class="edu-btn" data-topic="water">衛教</button>
+        </div>
+
+        <div class="card" data-key="bmr" data-row="3">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">代</div>
+              <h3>基礎代謝 (kcal)</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="bmr">--</div>
+          </div>
+          <div class="meta">靜止狀態下每日消耗熱量，與年齡、性別、肌肉量相關。</div>
+          <button class="edu-btn" data-topic="bmr">衛教</button>
+        </div>
+
+        <div class="card" data-key="visceral_fat" data-row="3">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">臟</div>
+              <h3>內臟脂肪 (等級)</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="visceral_fat">--</div>
+          </div>
+          <div class="meta">等級愈高，與代謝症候群、心血管疾病風險相關。</div>
+          <button class="edu-btn" data-topic="visceral_fat">衛教</button>
+        </div>
+
+        <div class="card" data-key="sleep_level" data-row="3">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">眠</div>
+              <h3>睡眠深淺度</h3>
+            </div>
+          </div>
+          <div class="value-row">
+            <div class="value" id="sleep_level">--</div>
+          </div>
+          <div class="meta">0=淺眠、1=中等、2=深睡，可搭配睡眠時間一起評估。</div>
+          <button class="edu-btn" data-topic="sleep_level">衛教</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== 血氧衛教彈出視窗 ===== -->
+<div id="eduModal">
+  <div class="modal-content">
+    <div class="modal-body">
+      <!-- 把你做好的衛教圖片存成 spo2_education.png 放在同資料夾 -->
+      <img src="spo2_education.png" alt="血氧衛教圖">
+    </div>
+    <button class="close-btn" onclick="closeEdu()">返回主頁</button>
+  </div>
+</div>
+
+<script>
+/* ===== 緩衝區：折線圖用 ===== */
+const buffers = {
+  pulse: [],
+  spo2: [],
+  temperature: [],
+  bp_sys: [],
+  bp_dia: [],
+  body_fat: [],
+  water: [],
+  bmr: [],
+  visceral_fat: [],
+  sleep_level: []
+};
+
+function pushBuffer(key, value){
+  const arr = buffers[key];
+  if(!arr) return;
+  arr.push({ t: new Date(), v: value });
+  if(arr.length > 40){
+    arr.shift();
+  }
+}
+
+/* ===== 個案基本資料載入 ===== */
+(function loadPatient() {
+  const name   = localStorage.getItem("patient_name")   || "未填寫";
+  const gender = localStorage.getItem("patient_gender") || "未填";
+  const birth  = localStorage.getItem("patient_birth")  || "";
+  const idno   = localStorage.getItem("patient_id")     || "";
+
+  document.getElementById("patient-info-name").innerText = name;
+  document.getElementById("patient-info-detail").innerText =
+    `性別：${gender} ｜ 出生：${birth || "未填寫"} ｜ 身分證：${idno || "未填寫"}`;
+
+  document.getElementById("edit-info-btn").addEventListener("click", () => {
+    localStorage.setItem("edit_mode", "info");
+    window.location.href = "patient_info.html";
+  });
+})();
+
+/* ===== 身高體重載入 ===== */
+document.getElementById("edit-hw-btn").addEventListener("click", () => {
+  localStorage.setItem("edit_mode", "height_weight");
+  window.location.href = "height_weight.html";
+});
+
+const state = {
+  pulse: 78,
+  spo2: 97,
+  temperature: 36.5,
+  bp_sys: 118,
+  bp_dia: 76,
+
+  body_fat: null,
+  water: null,
+  bmr: null,
+  visceral_fat: null,
+  sleep_level: null,
+
+  height: null,
+  weight: null,
+  bmi: null
+};
+
+(function loadHW() {
+  const patient = JSON.parse(localStorage.getItem("patient_data") || "{}");
+
+  if (patient.height) {
+    state.height = patient.height;
+    document.getElementById("height").innerText = patient.height;
+  }
+  if (patient.weight) {
+    state.weight = patient.weight;
+    document.getElementById("weight").innerText = patient.weight;
+  }
+
+  calcBMI();
+  renderValues();
+})();
+
+/* ===== BMI 計算 ===== */
+function calcBMI() {
+  const bmiEl   = document.getElementById("bmi");
+  const noteEl  = document.getElementById("bmi_note");
+
+  if (!state.height || !state.weight) {
+    bmiEl.innerText = "--";
+    bmiEl.className = "";
+    noteEl.innerText = "";
+    noteEl.className = "";
+    return;
+  }
+
+  const hM = state.height / 100;
+  const bmi = (state.weight / (hM * hM)).toFixed(1);
+  state.bmi = parseFloat(bmi);
+  bmiEl.innerText = bmi;
+
+  bmiEl.className  = "";
+  noteEl.className = "";
+
+  if (state.bmi < 18.5) {
+    bmiEl.classList.add("bmi-bad");
+    noteEl.classList.add("bmi-bad");
+    noteEl.innerText = "體重過輕，建議與醫師或營養師討論增加熱量與蛋白質攝取。";
+  } else if (state.bmi >= 18.5 && state.bmi < 24) {
+    bmiEl.classList.add("bmi-good");
+    noteEl.classList.add("bmi-good");
+    noteEl.innerText = "健康體重，請持續維持均衡飲食與規律運動。";
+  } else if (state.bmi >= 24 && state.bmi < 27) {
+    bmiEl.classList.add("bmi-warn");
+    noteEl.classList.add("bmi-warn");
+    noteEl.innerText = "體重過重，建議調整飲食與增加活動量，避免進一步上升。";
+  } else {
+    bmiEl.classList.add("bmi-bad");
+    noteEl.classList.add("bmi-bad");
+    noteEl.innerText = "屬肥胖範圍，建議尋求專業醫療或營養諮詢控制體重。";
+  }
+}
+
+/* ===== Chart 管理 ===== */
+const charts = {};
+
+function createChartFor(key){
+  if(charts[key]) return charts[key];
+
+  const card = document.querySelector(`.card[data-key="${key}"]`);
+  if(!card) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-wrap';
+  const canvas = document.createElement('canvas');
+  wrap.appendChild(canvas);
+  card.appendChild(wrap);
+
+  const ctx = canvas.getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: buffers[key].map(p=>p.t.toLocaleTimeString()),
+      datasets: [{
+        label: key,
+        data: buffers[key].map(p=>p.v),
+        fill: false,
+        tension: 0.25,
+        borderWidth: 2,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { display: true, ticks: { maxRotation: 0, autoSkip: true } },
+        y: { display: true }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  canvas.style.width = '100%';
+  canvas.style.height = '190px';
+
+  charts[key] = {chart, canvasEl:canvas, containerEl:wrap};
+  return charts[key];
+}
+
+function destroyChartFor(key){
+  const obj = charts[key];
+  if(!obj) return;
+  try { obj.chart.destroy(); } catch(e){}
+  if(obj.containerEl && obj.containerEl.parentNode){
+    obj.containerEl.parentNode.removeChild(obj.containerEl);
+  }
+  delete charts[key];
+}
+
+function updateChartFor(key){
+  const obj = charts[key];
+  if(!obj) return;
+  const chart = obj.chart;
+  chart.data.labels = buffers[key].map(p=>p.t.toLocaleTimeString());
+  chart.data.datasets[0].data = buffers[key].map(p=>p.v);
+  chart.update('none');
+}
+
+/* ===== 數值顯示 & 異常 ===== */
+function renderValues(){
+  const pulseEl = document.getElementById('pulse');
+  if (state.pulse != null){
+    pulseEl.innerText = state.pulse;
+    pulseEl.className = (state.pulse>100 || state.pulse<60) ? 'abnormal' : '';
+  }
+
+  const spo2El = document.getElementById('spo2');
+  if (state.spo2 != null){
+    spo2El.innerText = state.spo2;
+    spo2El.className = (state.spo2<90) ? 'abnormal' : '';
+  }
+
+  const tempEl = document.getElementById('temp');
+  if (state.temperature != null){
+    tempEl.innerText = state.temperature.toFixed(1);
+    tempEl.className = (state.temperature>38.0 || state.temperature<36.0) ? 'abnormal' : '';
+  }
+
+  const sysEl = document.getElementById('bp_sys');
+  if (state.bp_sys != null){
+    sysEl.innerText = state.bp_sys;
+    sysEl.className = (state.bp_sys>120 || state.bp_sys<90) ? 'abnormal' : '';
+  }
+  const diaEl = document.getElementById('bp_dia');
+  if (state.bp_dia != null){
+    diaEl.innerText = state.bp_dia;
+    diaEl.className = (state.bp_dia>80 || state.bp_dia<50) ? 'abnormal' : '';
+  }
+
+  calcBMI();
+
+  if(state.body_fat !== null){
+    const el = document.getElementById("body_fat");
+    el.innerText = state.body_fat.toFixed ? state.body_fat.toFixed(1) : state.body_fat;
+    el.className = (state.body_fat < 10 || state.body_fat > 30) ? 'abnormal' : '';
+  }
+
+  if(state.water !== null){
+    const el = document.getElementById("water");
+    el.innerText = state.water.toFixed ? state.water.toFixed(1) : state.water;
+    el.className = (state.water < 45 || state.water > 65) ? 'abnormal' : '';
+  }
+
+  if(state.bmr !== null){
+    const el = document.getElementById("bmr");
+    el.innerText = Math.round(state.bmr);
+    el.className = (state.bmr < 900 || state.bmr > 2000) ? 'abnormal' : '';
+  }
+
+  if(state.visceral_fat !== null){
+    const el = document.getElementById("visceral_fat");
+    el.innerText = Math.round(state.visceral_fat);
+    el.className = (state.visceral_fat >= 10) ? 'abnormal' : '';
+  }
+
+  if(state.sleep_level !== null){
+    const el = document.getElementById("sleep_level");
+    el.innerText = state.sleep_level;
+  }
+}
+
+/* ===== 卡片點擊：同一排一起開關圖表 ===== */
+document.querySelectorAll('.card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    const row = card.dataset.row;
+    if(!row) return;
+
+    const rowCards = document.querySelectorAll(`.card[data-row="${row}"]`);
+
+    // 這排有沒有已經開圖表
+    let anyHasChart = false;
+    rowCards.forEach(c=>{
+      const key = c.dataset.key;
+      if(key && charts[key]) anyHasChart = true;
+    });
+
+    if(anyHasChart){
+      rowCards.forEach(c=>{
+        const key = c.dataset.key;
+        if(key) destroyChartFor(key);
+      });
+    }else{
+      rowCards.forEach(c=>{
+        const key = c.dataset.key;
+        if(key){
+          createChartFor(key);
+          updateChartFor(key);
+        }
+      });
+    }
+  });
+});
+
+/* ===== 衛教按鈕：spo2 開彈窗，其它照舊跳頁 ===== */
+document.querySelectorAll('.edu-btn').forEach(btn=>{
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();  // 不觸發卡片點擊
+    const topic = btn.dataset.topic;
+    if(!topic) return;
+
+    if(topic === 'spo2'){
+      openEdu();
+    }else{
+      window.location.href = `education_${topic}.html`;
+    }
+  });
+});
+
+/* ===== 血氧衛教彈窗控制 ===== */
+function openEdu(){
+  document.getElementById('eduModal').style.display = 'flex';
+}
+function closeEdu(){
+  document.getElementById('eduModal').style.display = 'none';
+}
+
+/* ===== WebSocket / 模擬資料 ===== */
+function onNewMeasurement(payload){
+  const map = {
+    pulse: 'pulse',
+    spo2: 'spo2',
+    temperature: 'temperature',
+    temp_c: 'temperature',
+    bp_sys: 'bp_sys',
+    bp_dia: 'bp_dia',
+    height: 'height',
+    weight: 'weight',
+    body_fat: 'body_fat',
+    water: 'water',
+    bmr: 'bmr',
+    visceral_fat: 'visceral_fat',
+    sleep_level: 'sleep_level'
+  };
+
+  for(const k in map){
+    if(payload[k] !== undefined){
+      const target = map[k];
+      const v = Number(payload[k]);
+      state[target] = isNaN(v) ? payload[k] : v;
+      if(buffers[target] !== undefined && !isNaN(v)){
+        pushBuffer(target, v);
+      }
+    }
+  }
+
+  if(state.height){
+    document.getElementById("height").innerText = state.height;
+  }
+  if(state.weight){
+    document.getElementById("weight").innerText = state.weight;
+  }
+
+  renderValues();
+  for(const key of Object.keys(charts)){
+    updateChartFor(key);
+  }
+}
+
+(function tryConnectWS(){
+  const hostname = location.hostname;
+  const port = location.port || (location.protocol === 'https:' ? '443' : '80');
+  const proto = (location.protocol === 'https:' ? 'wss://' : 'ws://');
+  const wsUrl = proto + hostname + ":" + port + '/ws';
+
+  let ws;
+  try{
+    ws = new WebSocket(wsUrl);
+  }catch(e){
+    startLocalMock();
+    return;
+  }
+
+  let lastRecv = Date.now();
+
+  ws.onopen = ()=>{ renderValues(); };
+  ws.onmessage = (evt)=>{
+    try{
+      const obj = JSON.parse(evt.data);
+      const payload = obj.payload || {};
+      onNewMeasurement(payload);
+      lastRecv = Date.now();
+    }catch(e){}
+  };
+  ws.onclose = ()=>{ startLocalMock(); };
+  ws.onerror = ()=>{};
+
+  setInterval(()=>{
+    if(Date.now() - lastRecv > 5000){
+      localMockStep();
+    }
+  }, 3000);
+})();
+
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+function localMockStep(){
+  if(state.body_fat === null)     state.body_fat = 24;
+  if(state.water === null)        state.water = 55;
+  if(state.bmr === null)          state.bmr = 1300;
+  if(state.visceral_fat === null) state.visceral_fat = 7;
+  if(state.sleep_level === null)  state.sleep_level = 1;
+
+  state.pulse       = clamp((state.pulse || 78) + randInt(-6,6), 45, 120);
+  state.spo2        = clamp((state.spo2 || 97) + randInt(-2,2), 84, 99);
+  state.temperature = Math.round(clamp((state.temperature || 36.5) + (Math.random()-0.5)*0.3, 35.0, 39.0)*10)/10;
+  state.bp_sys      = clamp((state.bp_sys || 118) + randInt(-10,10), 70, 139);
+  state.bp_dia      = clamp((state.bp_dia || 76) + randInt(-3,3), 40, 89);
+
+  state.body_fat    = clamp(state.body_fat + (Math.random()-0.5)*0.3, 8, 40);
+  state.water       = clamp(state.water    + (Math.random()-0.5)*0.5, 40, 70);
+  state.bmr         = clamp(state.bmr      + randInt(-20,20), 800, 2200);
+  state.visceral_fat= clamp(state.visceral_fat + randInt(-1,1)*0.2, 3, 20);
+  state.sleep_level = clamp(state.sleep_level + randInt(-1,1), 0, 2);
+
+  pushBuffer('pulse', state.pulse);
+  pushBuffer('spo2', state.spo2);
+  pushBuffer('temperature', state.temperature);
+  pushBuffer('bp_sys', state.bp_sys);
+  pushBuffer('bp_dia', state.bp_dia);
+  pushBuffer('body_fat', state.body_fat);
+  pushBuffer('water', state.water);
+  pushBuffer('bmr', state.bmr);
+  pushBuffer('visceral_fat', state.visceral_fat);
+  pushBuffer('sleep_level', state.sleep_level);
+
+  renderValues();
+  for(const key of Object.keys(charts)) updateChartFor(key);
+}
+
+function startLocalMock(){
+  localMockStep();
+  setInterval(localMockStep, 3000);
+}
+
+/* 照護快捷選單 */
+document.getElementById('menuToggle').addEventListener('click', ()=>{
+  const p = document.getElementById('menuPanel');
+  p.classList.toggle('active');
+});
+document.querySelectorAll('.action-btn').forEach(btn=>{
+  btn.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    const action = btn.dataset.action;
+    try{
+      await fetch('/api/action', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action})
+      });
+      alert('已觸發：' + btn.innerText);
+    }catch(err){
+      alert('按鈕觸發（離線模式）：' + btn.innerText);
+    }
+  });
+});
+</script>
+</body>
+</html>

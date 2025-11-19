@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>病患資料輸入</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{
+      font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC';
+      background:#e8f4ff;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      margin:0;
+    }
+    .box{
+      background:white;
+      padding:24px 32px;
+      border-radius:12px;
+      width:320px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.1);
+    }
+    h2{
+      margin-top:0;
+      text-align:center;
+    }
+    .input{
+      margin-bottom:14px;
+    }
+    label{
+      font-weight:600;
+    }
+    input,select{
+      width:100%;
+      padding:8px;
+      border-radius:6px;
+      border:1px solid #ccc;
+      margin-top:4px;
+      box-sizing:border-box;
+    }
+    button{
+      width:100%;
+      padding:10px;
+      background:#0b5ed7;
+      color:white;
+      border:none;
+      font-size:16px;
+      border-radius:6px;
+      cursor:pointer;
+      margin-top:14px;
+    }
+    button:hover{
+      background:#0946a3;
+    }
+  </style>
+</head>
+<body>
+<div class="box">
+  <h2>請輸入病患資料</h2>
+
+  <div class="input">
+    <label>姓名：</label>
+    <input id="name" type="text">
+  </div>
+
+  <div class="input">
+    <label>性別：</label>
+    <select id="gender">
+      <option value="男">男</option>
+      <option value="女">女</option>
+    </select>
+  </div>
+
+  <div class="input">
+    <label>出生年月日：</label>
+    <input id="birth" type="date">
+  </div>
+
+  <div class="input">
+    <label>身分證字號：</label>
+    <input id="idno" type="text">
+  </div>
+
+  <button onclick="go()">儲存</button>
+</div>
+
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  const mode = localStorage.getItem("edit_mode");
+  const nameEl   = document.getElementById("name");
+  const genderEl = document.getElementById("gender");
+  const birthEl  = document.getElementById("birth");
+  const idnoEl   = document.getElementById("idno");
+
+  if (mode === "info") {
+    // 修改模式：載入既有資料
+    nameEl.value   = localStorage.getItem("patient_name")   || "";
+    genderEl.value = localStorage.getItem("patient_gender") || "男";
+    birthEl.value  = localStorage.getItem("patient_birth")  || "";
+    idnoEl.value   = localStorage.getItem("patient_id")     || "";
+  } else {
+    // 新增模式：預設值
+    nameEl.value   = "";
+    genderEl.value = "男";
+    birthEl.value  = "";
+    idnoEl.value   = "";
+  }
+});
+
+function go(){
+  const name   = document.getElementById('name').value.trim();
+  const gender = document.getElementById('gender').value;
+  const birth  = document.getElementById('birth').value;
+  const idno   = document.getElementById('idno').value.trim();
+
+  if(!name || !birth || !idno){
+    alert("請完整填寫所有欄位");
+    return;
+  }
+
+  // 儲存資料到 localStorage
+  localStorage.setItem("patient_name", name);
+  localStorage.setItem("patient_gender", gender);
+  localStorage.setItem("patient_birth", birth);
+  localStorage.setItem("patient_id", idno);
+
+  const mode = localStorage.getItem("edit_mode");
+
+  if (mode === "info") {
+    // 修改模式：回到數據頁
+    localStorage.removeItem("edit_mode");
+    window.location.href = "realmedashboard.html";
+  } else {
+    // 新增模式：下一步輸入身高體重
+    window.location.href = "height_weight.html";
+  }
+}
+</script>
+</body>
+</html>
