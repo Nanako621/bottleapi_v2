@@ -394,13 +394,13 @@
       }
     }
 
-    /* ===== 血氧教育彈窗 ===== */
+    /* ===== 衛教彈窗 ===== */
     #eduModal {
       position: fixed;
       z-index: 9999;
       inset: 0;
       background: rgba(0,0,0,0.55);
-      display: none;            /* flex when開啟 */
+      display: none;            /* flex when 開啟 */
       justify-content: center;
       align-items: center;
     }
@@ -678,12 +678,12 @@
   </main>
 </div>
 
-<!-- ===== 血氧衛教彈出視窗 ===== -->
+<!-- ===== 通用衛教彈出視窗 ===== -->
 <div id="eduModal">
   <div class="modal-content">
     <div class="modal-body">
-      <!-- 把你做好的衛教圖片存成 spo2_education.png 放在同資料夾 -->
-      <img src="spo2_education.png" alt="血氧衛教圖">
+      <!-- 由 JavaScript 動態設定 src 與 alt -->
+      <img id="eduImage" src="" alt="衛教圖片">
     </div>
     <button class="close-btn" onclick="closeEdu()">返回主頁</button>
   </div>
@@ -972,25 +972,58 @@ document.querySelectorAll('.card').forEach(card=>{
   });
 });
 
-/* ===== 衛教按鈕：spo2 開彈窗，其它照舊跳頁 ===== */
+/* ===== 衛教圖片對照表 ===== */
+/* 這裡依照你實際的檔名放圖片 */
+const eduImages = {
+  pulse:          'edu_pulse.png',          // 脈搏
+  spo2:           'spo2_education.png',     // 血氧（原本那張）
+  temperature:    'edu_temperature.png',    // 體溫
+  bp_sys:         'edu_bp_sys.png',         // 收縮壓
+  bp_dia:         'edu_bp_dia.png',         // 舒張壓
+  body_fat:       'edu_body_fat.png',       // 體脂率
+  water:          'edu_water.png',          // 身體水分
+  bmr:            'edu_bmr.png',            // 基礎代謝
+  visceral_fat:   'edu_visceral_fat.png',   // 內臟脂肪
+  sleep_level:    'edu_sleep_level.png'     // 睡眠深淺度
+};
+
+const eduAltText = {
+  pulse:          '脈搏衛教圖',
+  spo2:           '血氧衛教圖',
+  temperature:    '體溫衛教圖',
+  bp_sys:         '收縮壓衛教圖',
+  bp_dia:         '舒張壓衛教圖',
+  body_fat:       '體脂率衛教圖',
+  water:          '身體水分衛教圖',
+  bmr:            '基礎代謝衛教圖',
+  visceral_fat:   '內臟脂肪衛教圖',
+  sleep_level:    '睡眠深淺度衛教圖'
+};
+
+/* ===== 衛教按鈕：全部使用彈窗，依 topic 換圖 ===== */
 document.querySelectorAll('.edu-btn').forEach(btn=>{
   btn.addEventListener('click', (e)=>{
-    e.stopPropagation();  // 不觸發卡片點擊
+    e.stopPropagation();  // 不觸發卡片點擊（避免順便展開圖表）
     const topic = btn.dataset.topic;
     if(!topic) return;
-
-    if(topic === 'spo2'){
-      openEdu();
-    }else{
-      window.location.href = `education_${topic}.html`;
-    }
+    openEdu(topic);
   });
 });
 
-/* ===== 血氧衛教彈窗控制 ===== */
-function openEdu(){
-  document.getElementById('eduModal').style.display = 'flex';
+/* ===== 衛教彈窗控制（通用） ===== */
+function openEdu(topic){
+  const modal = document.getElementById('eduModal');
+  const img   = document.getElementById('eduImage');
+
+  const src = eduImages[topic] || 'edu_default.png';
+  const alt = eduAltText[topic] || '衛教圖片';
+
+  img.src = src;
+  img.alt = alt;
+
+  modal.style.display = 'flex';
 }
+
 function closeEdu(){
   document.getElementById('eduModal').style.display = 'none';
 }
