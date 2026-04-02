@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>資料登錄 - 大學生健康IoT平台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* 1. 字體設定 */
+    @font-face {
+      font-family: 'ProperScript';
+      src: url('ProperScript-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    :root {
+      --primary: #2db7d3;
+      --primary-dark: #1d8fa8;
+      --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #b3ebf6 100%);
+      /* AI 助理專用色系 */
+      --ai-purple: #7c3aed;
+      --ai-bg: linear-gradient(135deg, #f5ecff, #efe7ff);
+    }
+
+    body {
+      font-family: 'ProperScript', -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif;
+      background: var(--bg-gradient);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* 2. 頂端白色導覽列 */
+    .navbar {
+      width: 100%;
+      height: 70px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: fixed;
+      top: 0;
+      z-index: 100;
+      box-sizing: border-box;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .back-btn {
+      cursor: pointer;
+      font-size: 24px;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+      text-decoration: none;
+    }
+    .back-btn:hover { color: var(--primary); }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 500;
+      color: #374151;
+      letter-spacing: 0.02em;
+    }
+
+    /* === [新增] 懸浮 AI 助理按鈕樣式 === */
+    .ai-assistant-btn {
+      position: fixed;
+      right: 30px;
+      bottom: 30px;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--ai-bg);
+      color: var(--ai-purple);
+      border: 1px solid #e9d5ff;
+      border-radius: 999px;
+      padding: 16px 24px;
+      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.15);
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .ai-assistant-btn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 12px 28px rgba(124, 58, 237, 0.25);
+    }
+
+    .ai-assistant-btn .icon {
+      font-size: 20px;
+    }
+
+    /* 3. 主內容區塊容器 */
+    .main-content {
+      margin-top: 100px;
+      padding: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding-bottom: 60px;
+    }
+
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    h2 { margin-top: 0; text-align: center; color: #1f2937; }
+
+    .section-title {
+      font-size: 14px;
+      color: var(--primary);
+      border-bottom: 1px solid #e5e7eb;
+      margin: 20px 0 15px;
+      padding-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .input-group { margin-bottom: 16px; }
+    label { font-weight: 600; display: block; margin-bottom: 6px; color: #4b5563; }
+    
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      box-sizing: border-box;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(45, 183, 211, 0.15);
+    }
+
+    .row { display: flex; gap: 10px; }
+    .row > div { flex: 1; }
+
+    /* 按鈕美化 */
+    button.submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 25px;
+      box-shadow: 0 4px 12px rgba(45, 183, 211, 0.3);
+      transition: all 0.3s ease;
+    }
+    button.submit-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(45, 183, 211, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="nav-left">
+      <a href="javascript:history.back()" class="back-btn" title="返回上一頁">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </a>
+      <div class="brand">大學生健康IoT平台</div>
+    </div>
+    <div style="color:#d1d5db; font-size:20px;">◡̈</div>
+  </header>
+
+  <div class="main-content">
+    <div class="box">
+      <h2>資料登錄</h2>
+
+      <div class="section-title">基本資訊</div>
+      <div class="input-group">
+        <label>姓名</label>
+        <input id="name" type="text" placeholder="請輸入姓名">
+      </div>
+
+      <div class="input-group">
+        <label>性別</label>
+        <select id="gender">
+          <option value="男">男</option>
+          <option value="女">女</option>
+        </select>
+      </div>
+
+      <label>出生年月日</label>
+      <div class="row" style="margin-bottom:14px;">
+        <div><select id="birth_year"></select></div>
+        <div><select id="birth_month"></select></div>
+        <div><select id="birth_day"></select></div>
+      </div>
+
+      <div class="section-title">生理指標</div>
+      <div class="row">
+        <div class="input-group">
+          <label>身高 (cm)</label>
+          <select id="height"></select>
+        </div>
+        <div class="input-group">
+          <label>體重 (kg)</label>
+          <select id="weight"></select>
+        </div>
+      </div>
+
+      <button class="submit-btn" onclick="saveAll()">儲存並進入監測</button>
+    </div>
+  </div>
+
+  <a href="realmedashboard.html" class="ai-assistant-btn">
+    <span class="icon">✦</span>
+    AI 助理
+  </a>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const yearSelect = document.getElementById("birth_year");
+      const monthSelect = document.getElementById("birth_month");
+      const daySelect = document.getElementById("birth_day");
+      const heightSelect = document.getElementById("height");
+      const weightSelect = document.getElementById("weight");
+
+      const currentYear = new Date().getFullYear();
+      for (let y = currentYear; y >= 1920; y--) {
+        let opt = new Option(y + " 年", y);
+        if (y === 2005) opt.selected = true; // 加入這行：如果是 2005 就設為選取狀態
+        yearSelect.add(opt);
+      }
+      for (let m = 1; m <= 12; m++) monthSelect.add(new Option(m + " 月", m.toString().padStart(2, '0')));
+      for (let d = 1; d <= 31; d++) daySelect.add(new Option(d + " 日", d.toString().padStart(2, '0')));
+
+      for (let h = 50; h <= 250; h++) {
+        let opt = new Option(h, h);
+        if (h === 170) opt.selected = true;
+        heightSelect.add(opt);
+      }
+      for (let w = 20; w <= 200; w++) {
+        let opt = new Option(w, w);
+        if (w === 60) opt.selected = true;
+        weightSelect.add(opt);
+      }
+
+      const mode = localStorage.getItem("edit_mode");
+      if (mode === "info" || mode === "height_weight") {
+        document.getElementById("name").value = localStorage.getItem("patient_name") || "";
+        document.getElementById("gender").value = localStorage.getItem("patient_gender") || "男";
+        const oldBirth = localStorage.getItem("patient_birth");
+        if (oldBirth) {
+          const p = oldBirth.split("-");
+          yearSelect.value = p[0]; monthSelect.value = p[1]; daySelect.value = p[2];
+        }
+        const data = JSON.parse(localStorage.getItem("patient_data") || "{}");
+        if (data.height) heightSelect.value = data.height;
+        if (data.weight) weightSelect.value = data.weight;
+      }
+    });
+
+    function saveAll() {
+      const name = document.getElementById('name').value.trim();
+      if(!name) { alert("請輸入姓名"); return; }
+      
+      const fullBirth = `${document.getElementById('birth_year').value}-${document.getElementById('birth_month').value}-${document.getElementById('birth_day').value}`;
+      
+      localStorage.setItem("patient_name", name);
+      localStorage.setItem("patient_gender", document.getElementById('gender').value);
+      localStorage.setItem("patient_birth", fullBirth);
+      
+      const data = JSON.parse(localStorage.getItem("patient_data") || "{}");
+      data.height = Number(document.getElementById('height').value);
+      data.weight = Number(document.getElementById('weight').value);
+      localStorage.setItem("patient_data", JSON.stringify(data));
+
+      localStorage.removeItem("edit_mode");
+      window.location.href = "realmedashboard.html";
+    }
+  </script>
+</body>
+</html>

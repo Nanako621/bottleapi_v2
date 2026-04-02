@@ -207,15 +207,15 @@ app = Bottle()
 
 @app.get("/")
 def index():
-    return static_file('patient_info.html', root='.')
+    return static_file('patient_entry.html', root='.')
 
 @app.get("/dashboard")
 def dashboard():
     return static_file('realmedashboard.html', root='.')
 
-@app.get("/input2")
-def input2():
-    return static_file('height_weight.html', root='.')
+@app.get("/edit_info")
+def edit_info():
+    return static_file('patient_entry.html', root='.')
 
 
 
