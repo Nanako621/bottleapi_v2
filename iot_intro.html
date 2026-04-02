@@ -2,401 +2,411 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <title>智慧健康小幫手｜IoT 生理監測介紹</title>
+  <title>大學生健康 IoT 平台</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+
+@font-face {
+  font-family: 'ProperScript';
+  src: url('ProperScript-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+html, body, *{
+  font-family: 'ProperScript', "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+
+
     :root{
-      --green-start:#4cb4d1;
-      --green-end:#07667b;
+      --primary:#2db7d3;
+      --primary-dark:#1d8fa8;
+      --text:#1f2937;
+      --muted:#6b7280;
       --white:#ffffff;
-      --text-main:#f9fafb;
-      --text-sub:#e5e7eb;
-      --accent:#71d0ff;
-      --card-bg:#ffffff;
-      --card-shadow:0 10px 30px rgba(15,23,42,0.12);
+      --border:#e5e7eb;
+      --shadow:0 10px 30px rgba(15,23,42,0.12);
     }
+
     *{
       box-sizing:border-box;
     }
+
     html,body{
       margin:0;
       padding:0;
-      height:100%;
       font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Segoe UI",Roboto,sans-serif;
-      background:#f3f4f6;
-      color:#111827;
+      color:var(--text);
+      background:#f8fafc;
     }
 
-    /* 頂端導覽列 */
-    .nav{
+    a{
+      text-decoration:none;
+      color:inherit;
+    }
+
+    /* ===== Navbar ===== */
+    .navbar{
       position:fixed;
       top:0;
       left:0;
       right:0;
-      z-index:10;
+      z-index:100;
+      height:88px;
+      background:rgba(255,255,255,0.96);
+      backdrop-filter:blur(8px);
+      border-bottom:1px solid rgba(0,0,0,0.08);
       display:flex;
       align-items:center;
       justify-content:space-between;
-      padding:14px 38px;
-      color:#e5f5ff;
-      background:linear-gradient(90deg,rgba(0,0,0,0.15),rgba(0,0,0,0));
+      padding:0 48px;
     }
-    .nav-left{
+
+    .brand{
+      font-size:24px;
+      font-weight:500;
+      color:#374151;
+      letter-spacing:0.02em;
+    }
+
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:34px;
+      font-size:16px;
+      color:#6b7280;
+    }
+
+    .nav-links a.active{
+      color:var(--primary);
+      font-weight:600;
+    }
+
+    .nav-gear{
+      width:44px;
+      height:44px;
+      border:1px solid #d1d5db;
+      border-radius:6px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#9ca3af;
+      font-size:20px;
+    }
+
+    /* ===== Hero ===== */
+    .hero{
+      position:relative;
+      min-height:740px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:140px 24px 80px;
+      overflow:hidden;
+      background:
+        linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)),
+         url("health-bg.png") center center / cover no-repeat;
+
+    }
+
+    .hero-content{
+      max-width:980px;
+      color:#2db7d3;
+    }
+
+
+    .hero-title{
+      font-size:72px;
+      font-weight:500;
+      line-height:1.2;
+      margin:0 0 28px;
+      letter-spacing:0.03em;
+      text-shadow:0 4px 20px rgba(0,0,0,0.28);
+
+      /* 🔥 白色外框（重點） */
+  text-shadow:
+    -2px -2px 0 #ffffff,
+     2px -2px 0 #ffffff,
+    -2px  2px 0 #ffffff,
+     2px  2px 0 #ffffff;
+
+    }
+
+    .hero-desc{
+      font-size:18px;
+      line-height:2;
+      color:rgba(255,255,255,0.92);
+      max-width:980px;
+      margin:0 auto 42px;
+      text-shadow:0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .hero-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:360px;
+      padding:20px 32px;
+      background:var(--primary);
+      color:#fff;
+      border:none;
+      border-radius:999px;
+      font-size:24px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 12px 30px rgba(45,183,211,0.35);
+      transition:transform .2s ease, background .2s ease, box-shadow .2s ease;
+    }
+
+    .hero-btn:hover{
+      background:var(--primary-dark);
+      transform:translateY(-2px);
+      box-shadow:0 16px 34px rgba(45,183,211,0.42);
+    }
+
+    /* ===== Floating AI button ===== */
+    .ai-assistant{
+      position:fixed;
+      right:34px;
+      bottom:28px;
+      z-index:120;
       display:flex;
       align-items:center;
       gap:10px;
-    }
-    .logo-circle{
-      width:34px;
-      height:34px;
+      background:linear-gradient(135deg,#f5ecff,#efe7ff);
+      color:#7c3aed;
+      border:1px solid #e9d5ff;
       border-radius:999px;
-      background:linear-gradient(135deg,#38bdf8,#1d4ed8);
+      padding:18px 24px;
+      box-shadow:0 10px 24px rgba(124,58,237,0.15);
+      font-size:18px;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .ai-assistant span{
+      font-size:22px;
+    }
+
+    /* ===== Section ===== */
+    .section{
+      background:#fff;
+      padding:72px 24px;
+    }
+
+    .section-inner{
+      max-width:1200px;
+      margin:0 auto;
+    }
+
+    .section-title{
+      font-size:36px;
+      font-weight:800;
+      text-align:center;
+      margin:0 0 16px;
+      color:#0f172a;
+    }
+
+    .section-desc{
+      text-align:center;
+      font-size:18px;
+      color:var(--muted);
+      max-width:860px;
+      line-height:1.9;
+      margin:0 auto 42px;
+    }
+
+    .feature-grid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:24px;
+    }
+
+    .feature-card{
+      background:#ffffff;
+      border:1px solid #e5e7eb;
+      border-radius:24px;
+      padding:28px 24px;
+      box-shadow:var(--shadow);
+    }
+
+    .feature-icon{
+      width:60px;
+      height:60px;
+      border-radius:18px;
       display:flex;
       align-items:center;
       justify-content:center;
-      font-weight:800;
-      font-size:18px;
-      color:#fff;
-      box-shadow:0 4px 10px rgba(15,23,42,0.4);
-    }
-    .brand-text-main{
-      font-size:16px;
-      font-weight:700;
-    }
-    .brand-text-sub{
-      font-size:11px;
-      opacity:0.9;
-    }
-    .nav-right{
-      display:flex;
-      gap:16px;
-      font-size:13px;
-    }
-    .nav-link{
-      color:#e5f5ff;
-      text-decoration:none;
-      opacity:0.85;
-    }
-    .nav-link.active{
-      font-weight:600;
-      opacity:1;
-      text-decoration:underline;
-      text-underline-offset:4px;
+      font-size:28px;
+      background:#ecfeff;
+      color:#0891b2;
+      margin-bottom:18px;
     }
 
-    /* Hero 大區塊 */
-    .hero-wrapper{
-      min-height:100vh;
-      background:linear-gradient(135deg,var(--green-start),var(--green-end));
-      position:relative;
-      overflow:hidden;
-      color:var(--text-main);
-      padding-top:64px; /* 給 nav 空間 */
+    .feature-card h3{
+      margin:0 0 12px;
+      font-size:22px;
+      color:#111827;
     }
-    .hero-shape{
-      position:absolute;
-      bottom:-120px;
-      left:-80px;
-      right:-80px;
-      height:280px;
-      background:#ffffff;
-      opacity:0.96;
-      border-radius:40% 40% 0 0;
+
+    .feature-card p{
+      margin:0;
+      font-size:16px;
+      line-height:1.9;
+      color:#6b7280;
     }
-    .hero-inner{
-      max-width:1100px;
-      margin:0 auto;
-      padding:72px 32px 180px;
-      display:grid;
-      grid-template-columns: minmax(0,1.2fr) minmax(0,1fr);
-      gap:40px;
-      position:relative;
-      z-index:1;
+
+    .highlight{
+      color:var(--primary);
+      font-weight:700;
     }
-    @media (max-width:900px){
-      .hero-inner{
+
+    /* ===== Responsive ===== */
+    @media (max-width: 1024px){
+      .hero-title{
+        font-size:56px;
+      }
+
+      .feature-grid{
         grid-template-columns:1fr;
-        padding-top:72px;
-        padding-bottom:160px;
       }
     }
 
-    /* 左側文字介紹 */
-    .hero-title{
-      font-size:34px;
-      font-weight:800;
-      letter-spacing:0.03em;
-      margin-bottom:8px;
-    }
-    .hero-subtitle{
-      font-size:16px;
-      font-weight:500;
-      color:var(--accent);
-      margin-bottom:16px;
-    }
-    .hero-desc{
-      font-size:14px;
-      line-height:1.7;
-      color:var(--text-sub);
-      max-width:520px;
-      margin-bottom:18px;
-    }
-    .hero-badges{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-bottom:26px;
-    }
-    .badge{
-      font-size:11px;
-      padding:4px 10px;
-      border-radius:999px;
-      background:rgba(15,23,42,0.28);
-      border:1px solid rgba(226,232,240,0.3);
-      display:flex;
-      align-items:center;
-      gap:6px;
-    }
-    .hero-actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:14px;
-      align-items:center;
-    }
-    .btn-primary{
-      padding:10px 20px;
-      border-radius:999px;
-      border:none;
-      background:#ffffff;
-      color:#0f3f76;
-      font-size:14px;
-      font-weight:600;
-      cursor:pointer;
-      box-shadow:0 10px 20px rgba(15,23,42,0.3);
-    }
-    .btn-primary:hover{
-      transform:translateY(-1px);
-      box-shadow:0 14px 26px rgba(15,23,42,0.35);
-    }
-    .btn-ghost{
-      border-radius:999px;
-      border:1px solid rgba(241,245,249,0.8);
-      padding:8px 16px;
-      background:transparent;
-      color:#e5f5ff;
-      font-size:13px;
-      display:flex;
-      align-items:center;
-      gap:6px;
-      cursor:pointer;
-    }
+    @media (max-width: 768px){
+      .navbar{
+        height:auto;
+        padding:18px 20px;
+        flex-wrap:wrap;
+        gap:14px;
+      }
 
-    /* 右側可愛圖示圈圈 */
-    .hero-illustration{
-      position:relative;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .circle{
-      width:260px;
-      height:260px;
-      border-radius:50%;
-      border:1px dashed rgba(240,249,255,0.9);
-      position:relative;
-      background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.18),transparent);
-    }
-    .center-avatar{
-      width:90px;
-      height:90px;
-      border-radius:50%;
-      background:#ffffff;
-      position:absolute;
-      top:50%; left:50%;
-      transform:translate(-50%,-50%);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:#0f766e;
-      font-size:46px;
-      box-shadow:0 10px 30px rgba(15,23,42,0.25);
-    }
-    .floating-icon{
-      width:52px;
-      height:52px;
-      border-radius:50%;
-      background:#ffffff;
-      position:absolute;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:26px;
-      box-shadow:0 6px 18px rgba(15,23,42,0.18);
-    }
-    .fi-1{ top:-16px; left:50%; transform:translateX(-50%);}
-    .fi-2{ right:-12px; top:30%; }
-    .fi-3{ right:6px; bottom:-10px;}
-    .fi-4{ left:6px; bottom:-10px;}
-    .fi-5{ left:-14px; top:30%;}
+      .brand{
+        font-size:22px;
+      }
 
-    .floating-label{
-      position:absolute;
-      bottom:-40px;
-      left:50%;
-      transform:translateX(-50%);
-      font-size:11px;
-      color:rgba(15,23,42,0.8);
-      background:rgba(248,250,252,0.9);
-      padding:4px 10px;
-      border-radius:999px;
-      box-shadow:0 4px 10px rgba(15,23,42,0.18);
-    }
+      .nav-links{
+        gap:18px;
+        font-size:15px;
+      }
 
-    /* 下方簡短功能區 */
-    .intro-section{
-      position:relative;
-      z-index:2;
-      padding:0 24px 40px;
-      margin-top:-120px;
-    }
-    .intro-inner{
-      max-width:1100px;
-      margin:0 auto;
-    }
-    .intro-title{
-      font-size:16px;
-      font-weight:700;
-      margin-bottom:10px;
-      display:flex;
-      align-items:center;
-      gap:6px;
-    }
-    .tool-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-      gap:16px;
-    }
-    .tool-card{
-      background:var(--card-bg);
-      border-radius:16px;
-      padding:12px 14px;
-      box-shadow:var(--card-shadow);
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-    }
-    .tool-title{
-      font-size:14px;
-      font-weight:600;
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-    .tool-desc{
-      font-size:12px;
-      color:#4b5563;
-      line-height:1.6;
-    }
-    .tool-tag{
-      font-size:11px;
-      color:#2563eb;
-      background:#dbeafe;
-      padding:2px 8px;
-      border-radius:999px;
-      align-self:flex-start;
-      margin-top:2px;
+      .hero{
+        min-height:680px;
+        padding-top:150px;
+      }
+
+      .hero-title{
+        font-size:40px;
+      }
+
+      .hero-desc{
+        font-size:16px;
+        line-height:1.8;
+      }
+
+      .hero-btn{
+        min-width:auto;
+        width:100%;
+        max-width:340px;
+        font-size:20px;
+        padding:18px 24px;
+      }
+
+      .ai-assistant{
+        right:18px;
+        bottom:18px;
+        padding:14px 18px;
+        font-size:16px;
+      }
     }
   </style>
 </head>
 <body>
-<header class="nav">
-  <div class="nav-left">
-    <div class="logo-circle">H</div>
-    <div>
-      <div class="brand-text-main">智慧健康小幫手</div>
-      <div class="brand-text-sub">Smart Health • IoT Monitoring</div>
-    </div>
-  </div>
-  <nav class="nav-right">
-    <a class="nav-link active" href="#">IoT 監測介紹</a>
-    <a class="nav-link" href="realmedashboard.html">即時儀表板</a>
-  </nav>
-</header>
 
-<section class="hero-wrapper">
-  <div class="hero-inner">
-    <!-- 左邊文字 -->
-    <div>
-      <div class="hero-subtitle">即時更新的智慧照護工具</div>
-      <div class="hero-title">智慧健康 IoT 監測平台</div>
+  <header class="navbar">
+    <div class="brand">大學生健康IoT平台</div>
+
+    <nav class="nav-links">
+      <a href="#" class="active">首頁</a>
+      <a href="#services">服務</a>
+      <a href="#contact">聯絡</a>
+       <div class="nav-gear"> ◡̈ </div> 
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1 class="hero-title">連結健康，改善生活。</h1>
       <p class="hero-desc">
-        將穿戴式感測器與網路連線結合，能即時蒐集與分析使用者的重要健康數據。
-        系統會自動從量測裝置取得體重、心率、血壓、血氧、BMI、BMR 等指標，並以圖表方式動態呈現，協助照護人員與家屬快速掌握身體狀況變化。
-        就能快速掌握「現在狀況好不好」，也能一鍵展開趨勢圖，即時追蹤這幾天的變化。
+        我們提供專業的大學生健康物聯網智慧監測服務，結合穿戴式裝置、即時資料傳輸與健康儀表板分析，
+        協助學生掌握心率、睡眠、血氧、體溫與生活作息變化，提升自我健康管理效率，
+        建立更規律、更有品質的校園生活。
       </p>
-      <div class="hero-badges">
-        <div class="badge">📡 即時感測資料串流</div>
-        <div class="badge">📊 一頁看完所有生理數據</div>
-        <div class="badge">💬 點選卡片就有衛教說明</div>
-      </div>
-      <div class="hero-actions">
-        <button class="btn-primary" onclick="location.href='patient_info.html'">
-          開始使用智慧監測系統
-        </button>
+      <button class="hero-btn" onclick="location.href='patient_info.html'">
+        開始使用智慧監測系統
+      </button>
+    </div>
+  </section>
+
+  <section class="section" id="services">
+    <div class="section-inner">
+      <h2 class="section-title">平台核心服務</h2>
+      <p class="section-desc">
+        從即時監測到健康分析，平台以<span class="highlight">大學生日常需求</span>為核心，
+        讓健康管理不再只是醫療情境，而是融入課業、作息、壓力與生活習慣的智慧工具。
+      </p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⌚</div>
+          <h3>即時健康監測</h3>
+          <p>
+            串接穿戴式裝置與 IoT 感測資料，即時掌握心率、血氧、體溫與睡眠狀況，
+            幫助學生快速了解當下身體狀態。
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>健康趨勢分析</h3>
+          <p>
+            透過視覺化圖表呈現每日與近期變化，觀察熬夜、考試壓力、運動習慣
+            與身體數值之間的關聯。
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h3>智慧提醒與建議</h3>
+          <p>
+            結合系統規則與後續 AI 分析能力，主動提供睡眠不足、壓力偏高、
+            生活作息異常等提醒與調整建議。
+          </p>
+        </div>
       </div>
     </div>
+  </section>
+  </section>
 
-    <!-- 右邊可愛圖示圈圈 -->
-    <div class="hero-illustration">
-      <div class="circle">
-        <div class="center-avatar">🏃‍♂️</div>
-        <div class="floating-icon fi-1">❤️</div>
-        <div class="floating-icon fi-2">🫁</div>
-        <div class="floating-icon fi-3">🩺</div>
-        <div class="floating-icon fi-4">💤</div>
-        <div class="floating-icon fi-5">📈</div>
-        <div class="floating-label">即時量測．精準追蹤．全面掌握生理狀態</div>
-      </div>
-    </div>
-  </div>
+  <!-- 🔥 聯絡區塊（這裡是正確位置） -->
+  <section id="contact" style="padding:80px 20px; text-align:center; background:#fff;">
+    <h2 style="font-size:28px; margin-bottom:10px;">聯絡我們</h2>
+    <p style="color:#6b7280;">有任何問題或建議，歡迎留下訊息</p>
 
-  <!-- 底部白色波浪 -->
-  <div class="hero-shape"></div>
-</section>
+    <form style="max-width:400px; margin:20px auto;">
+      <input type="text" placeholder="你的姓名" style="width:100%; padding:10px; margin-bottom:10px;"><br>
+      <input type="email" placeholder="你的Email" style="width:100%; padding:10px; margin-bottom:10px;"><br>
+      <textarea placeholder="想說的話..." style="width:100%; padding:10px;"></textarea><br><br>
+      <button type="submit" style="padding:10px 20px; border-radius:999px; background:#2db7d3; color:#fff; border:none;">
+        送出
+      </button>
+    </form>
+  </section>
 
-<section class="intro-section">
-  <div class="intro-inner">
-    <div class="intro-title">💙 為什麼要做智慧 IoT 監測？</div>
-    <div class="tool-grid">
-      <div class="tool-card">
-        <div class="tool-title">減少紙本紀錄負擔</div>
-        <div class="tool-desc">
-          感測器自動上傳數據，照護人員不必每小時抄寫脈搏與血壓，
-          也能減少抄錯數字的風險，讓時間回到陪伴與照護上。
-        </div>
-        <div class="tool-tag">for 照護人員</div>
-      </div>
-
-      <div class="tool-card">
-        <div class="tool-title">清楚看出「異常」與「趨勢」</div>
-        <div class="tool-desc">
-          當生理值超出範圍時會以紅色標示，點開卡片可以看到最近一段時間的折線圖，
-          比單一數字更容易看出是否持續升高或下降。
-        </div>
-        <div class="tool-tag">for 即時監測</div>
-      </div>
-
-      <div class="tool-card">
-        <div class="tool-title">搭配衛教，幫忙解釋數字</div>
-        <div class="tool-desc">
-          每一張卡片都有「衛教」按鈕，說明這個數值代表什麼、
-          大概的正常範圍，以及一些相關小知識。
-        </div>
-        <div class="tool-tag">for 民眾與家屬</div>
-      </div>
-    </div>
-  </div>
-</section>
+  
+  <button class="ai-assistant" type="button" onclick="location.href='realmedashboard.html'">
+    <span>✦</span> AI 助理
+  </button>
 
 </body>
-</html> 
+</html>

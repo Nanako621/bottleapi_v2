@@ -879,90 +879,98 @@ function updateChartFor(key){
 
 /* ===== 數值顯示 & 異常 ===== */
 function renderValues(){
-
-  /* --- 脈搏 --- */
   const pulseEl = document.getElementById('pulse');
   if (state.pulse != null){
     pulseEl.innerText = state.pulse;
-    // 異常條件：脈搏 >100 或 <50
-    pulseEl.className = (state.pulse > 100 || state.pulse < 50) ? 'abnormal' : '';
+    pulseEl.className = (state.pulse>100 || state.pulse<50) ? 'abnormal' : '';
   }
 
-  /* --- 血氧 SpO2 --- */
   const spo2El = document.getElementById('spo2');
   if (state.spo2 != null){
     spo2El.innerText = state.spo2;
-    // 異常條件：血氧 <95%
-    spo2El.className = (state.spo2 < 95) ? 'abnormal' : '';
+    spo2El.className = (state.spo2<90) ? 'abnormal' : '';
   }
 
-  /* --- 體溫 --- */
   const tempEl = document.getElementById('temp');
   if (state.temperature != null){
     tempEl.innerText = state.temperature.toFixed(1);
-    // 異常條件：體溫 >38.0 或 <35.7
-    tempEl.className = (state.temperature > 38.0 || state.temperature < 35.7) ? 'abnormal' : '';
+    tempEl.className = (state.temperature>37.9 || state.temperature<35.7) ? 'abnormal' : '';
   }
 
-  /* --- 收縮壓 --- */
   const sysEl = document.getElementById('bp_sys');
   if (state.bp_sys != null){
     sysEl.innerText = state.bp_sys;
-    // 異常條件：收縮壓 >120 或 <90
-    sysEl.className = (state.bp_sys > 120 || state.bp_sys < 90) ? 'abnormal' : '';
+    sysEl.className = (state.bp_sys>120 || state.bp_sys<90) ? 'abnormal' : '';
   }
-
-  /* --- 舒張壓 --- */
   const diaEl = document.getElementById('bp_dia');
   if (state.bp_dia != null){
     diaEl.innerText = state.bp_dia;
-    // 異常條件：舒張壓 >80 或 <60
-    diaEl.className = (state.bp_dia > 80 || state.bp_dia < 60) ? 'abnormal' : '';
+    diaEl.className = (state.bp_dia>80 || state.bp_dia<60) ? 'abnormal' : '';
   }
 
-  /* ===== BMI 更新 ===== */
   calcBMI();
 
-  /* --- 體脂率 body fat --- */
   if(state.body_fat !== null){
     const el = document.getElementById("body_fat");
     el.innerText = state.body_fat.toFixed ? state.body_fat.toFixed(1) : state.body_fat;
-    // ★ 異常條件：體脂率 <14% 或 >24%
-    el.className = (state.body_fat < 14 || state.body_fat > 24) ? 'abnormal' : '';
+    el.className = (state.body_fat < 14 || state.body_fat > 35) ? 'abnormal' : '';
   }
 
-  /* --- 身體水分 water --- */
   if(state.water !== null){
     const el = document.getElementById("water");
     el.innerText = state.water.toFixed ? state.water.toFixed(1) : state.water;
-    // ★ 異常條件：水分 ≤55% 或 >65%
-    el.className = (state.water <= 55 || state.water > 65) ? 'abnormal' : '';
+    el.className = (state.water < 45 || state.water > 65) ? 'abnormal' : '';
   }
 
-  /* --- 基礎代謝 BMR --- */
   if(state.bmr !== null){
     const el = document.getElementById("bmr");
     el.innerText = Math.round(state.bmr);
-    // ★ 異常條件：BMR ≤1500 或 >2000
-    el.className = (state.bmr <= 1500 || state.bmr > 2000) ? 'abnormal' : '';
+    el.className = (state.bmr < 1200 || state.bmr > 2000) ? 'abnormal' : '';
   }
 
-  /* --- 內臟脂肪 visceral fat --- */
   if(state.visceral_fat !== null){
     const el = document.getElementById("visceral_fat");
     el.innerText = Math.round(state.visceral_fat);
-    // ★ 異常條件：內臟脂肪 ≥14
-    el.className = (state.visceral_fat >= 14) ? 'abnormal' : '';
+    el.className = (state.visceral_fat >= 10) ? 'abnormal' : '';
   }
 
-  /* --- 睡眠深淺度 --- */
   if(state.sleep_level !== null){
     const el = document.getElementById("sleep_level");
     el.innerText = state.sleep_level;
-    //（此項沒有異常判斷）
   }
 }
 
+/* ===== 卡片點擊：同一排一起開關圖表 ===== */
+document.querySelectorAll('.card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    const row = card.dataset.row;
+    if(!row) return;
+
+    const rowCards = document.querySelectorAll(`.card[data-row="${row}"]`);
+
+    // 這排有沒有已經開圖表
+    let anyHasChart = false;
+    rowCards.forEach(c=>{
+      const key = c.dataset.key;
+      if(key && charts[key]) anyHasChart = true;
+    });
+
+    if(anyHasChart){
+      rowCards.forEach(c=>{
+        const key = c.dataset.key;
+        if(key) destroyChartFor(key);
+      });
+    }else{
+      rowCards.forEach(c=>{
+        const key = c.dataset.key;
+        if(key){
+          createChartFor(key);
+          updateChartFor(key);
+        }
+      });
+    }
+  });
+});
 
 /* ===== 衛教圖片對照表 ===== */
 /* 這裡依照你實際的檔名放圖片 */
@@ -1162,4 +1170,4 @@ document.querySelectorAll('.action-btn').forEach(btn=>{
 });
 </script>
 </body>
-</html>
+</html> 

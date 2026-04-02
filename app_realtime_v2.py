@@ -211,7 +211,7 @@ def index():
 
 @app.get("/dashboard")
 def dashboard():
-    return static_file('realtimedashboard.html', root='.')
+    return static_file('realmedashboard.html', root='.')
 
 @app.get("/input2")
 def input2():
