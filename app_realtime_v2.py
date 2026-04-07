@@ -61,7 +61,6 @@ def broadcaster():
             gsleep(0.05)
             continue
 
-        # log message arrival
         logging.info(f"[broadcaster] pop inbox msg (len sockets={len(sockets)}) -> {msg[:120]!r}")
 
         dead = []
@@ -115,7 +114,6 @@ async def mqtt_sub():
             try:
                 inbox.put_nowait(out_text)
             except queue.Full:
-                # queue 滿了，丟棄最舊（或採取其他策略）
                 try:
                     _ = inbox.get_nowait()
                     inbox.put_nowait(out_text)
@@ -136,13 +134,17 @@ def run_mqtt():
 threading.Thread(target=run_mqtt, daemon=True).start()
 
 # ---- Mock publisher：當 MQTT 不活躍時每 3 秒放入模擬資料 ----
-# 初始模擬狀態（與前端相容）
+# 初始模擬狀態（與新版前端相容）
 mock_state = {
-    "pulse": 78,    # 45~120
-    "spo2": 97,     # 84~99
-    "temp": 36.5,   # 35.0~39.0
-    "bp_sys": 118,  # 70~139
-    "bp_dia": 76,   # 40~89
+    "heart_rate": 78,       # 45~120
+    "steps": 4200,          # 0~30000
+    "active_minutes": 35,   # 0~300
+    "sleep_hours": 7.2,     # 3.0~12.0
+    "sleep_quality": 82,    # 0~100
+    "sedentary_time": 180,  # 0~900
+    "calories": 1680,       # 800~4000
+    "spo2": 97,             # 84~99
+    "hrv": 48,              # 10~120
     "height": 178,
     "weight": 64
 }
@@ -153,36 +155,37 @@ def clamp(v, lo, hi):
 def mock_publisher():
     """每 3 秒產生一筆模擬資料放入 inbox（格式跟 MQTT 相同：{topic, payload}）"""
     while True:
-        # 若最近有 MQTT 訊息，也可以選擇繼續推 mock（讓前端能在無新 MQTT 時持續更新）
-        # 或者改成：if time_since_last_mqtt < 2: sleep and continue  -> 我這裡選擇始終推送 mock（3s），真實 MQTT 會覆寫
-        # 但為避免跟真實資料競爭太頻繁，我們可以檢查是否在非常短時間內收到 MQTT，若是，降低 mock 頻率
         last = get_last_mqtt_ts()
         now = time.time()
+
         # 如果最近 2 秒內有收到 MQTT，讓 mock 等待 3 秒再發（避免頻繁覆寫）
         if now - last < 2.0:
             time.sleep(3.0)
             continue
 
-        # 按你的規則調整 random 變動
-        # 脈搏 ±6，範圍 45~120
-        mock_state["pulse"] = int(clamp(round(mock_state["pulse"] + random.randint(-6, 6)), 45, 120))
-        # 血氧 ±2，範圍 84~99
-        mock_state["spo2"] = int(clamp(round(mock_state["spo2"] + random.randint(-2, 2)), 84, 99))
-        # 體溫 ±0.5，範圍 35.5~39.0（保持一位小數）
-        mock_state["temp"] = round(clamp(round(mock_state["temp"]*10)/10 + (random.random() - 0.5), 35.5, 39.0), 1)
-        # 收縮壓 ±10，範圍 70~139
-        mock_state["bp_sys"] = int(clamp(round(mock_state["bp_sys"] + random.randint(-10, 10)), 70, 139))
-        # 舒張壓 ±3，範圍 40~89
-        mock_state["bp_dia"] = int(clamp(round(mock_state["bp_dia"] + random.randint(-3, 3)), 40, 89))
+        # 按新版欄位規則調整 random 變動
+        mock_state["heart_rate"] = int(clamp(mock_state["heart_rate"] + random.randint(-5, 5), 45, 120))
+        mock_state["steps"] = int(clamp(mock_state["steps"] + random.randint(20, 180), 0, 30000))
+        mock_state["active_minutes"] = int(clamp(mock_state["active_minutes"] + random.randint(0, 3), 0, 300))
+        mock_state["sleep_hours"] = round(clamp(mock_state["sleep_hours"] + random.uniform(-0.1, 0.1), 3.0, 12.0), 1)
+        mock_state["sleep_quality"] = int(clamp(mock_state["sleep_quality"] + random.randint(-3, 3), 0, 100))
+        mock_state["sedentary_time"] = int(clamp(mock_state["sedentary_time"] + random.randint(1, 10), 0, 900))
+        mock_state["calories"] = int(clamp(mock_state["calories"] + random.randint(5, 20), 800, 4000))
+        mock_state["spo2"] = int(clamp(mock_state["spo2"] + random.randint(-1, 1), 84, 99))
+        mock_state["hrv"] = int(clamp(mock_state["hrv"] + random.randint(-3, 3), 10, 120))
 
         payload = {
             "timestamp": int(time.time()),
-            # 使用與前端一致的欄位名稱
-            "pulse": mock_state["pulse"],
+            # 使用與新版前端一致的欄位名稱
+            "heart_rate": mock_state["heart_rate"],
+            "steps": mock_state["steps"],
+            "active_minutes": mock_state["active_minutes"],
+            "sleep_hours": mock_state["sleep_hours"],
+            "sleep_quality": mock_state["sleep_quality"],
+            "sedentary_time": mock_state["sedentary_time"],
+            "calories": mock_state["calories"],
             "spo2": mock_state["spo2"],
-            "temperature": mock_state["temp"],  # 前端會檢查 temperature 或 temp_c
-            "bp_sys": mock_state["bp_sys"],
-            "bp_dia": mock_state["bp_dia"],
+            "hrv": mock_state["hrv"],
             "height": mock_state["height"],
             "weight": mock_state["weight"]
         }
@@ -217,8 +220,6 @@ def dashboard():
 def edit_info():
     return static_file('patient_entry.html', root='.')
 
-
-
 # 若你有 /static 目錄，下面可以提供靜態資源：
 @app.route('/static/<filepath:path>')
 def server_static(filepath):
@@ -240,7 +241,6 @@ def ws():
             if msg is None:
                 logging.info(f"[ws] client {id(wsock)} closed connection.")
                 break
-            # Optional: log if client sent something
             logging.debug(f"[ws] received from client {id(wsock)}: {msg}")
     except WebSocketError as e:
         logging.warning(f"[ws] WebSocketError for {id(wsock)}: {e}")
@@ -249,7 +249,6 @@ def ws():
     finally:
         sockets.discard(wsock)
         logging.info(f"[ws] client removed: {id(wsock)} (total {len(sockets)})")
-
 
 # 新增一個 API：當使用者按下右上按鈕會 POST 到這裡
 @app.post("/api/action")

@@ -1,253 +1,359 @@
+
 <!doctype html>
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>智慧健康IoT檢測</title>
+  <title>大學生健康監測儀表板</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root{
-      --bg: #e8f4ff;
-      --nav-bg: #0b3d91;
-      --nav-border: #0b3d91;
-      --primary: #0b5ed7;
-      --primary-soft: #dbeafe;
-      --card: #ffffff;
-      --muted: #6b7280;
-      --radius: 16px;
-      --gap: 18px;
+  
+    @font-face {
+      font-family: 'ProperScript';
+      src: url('ProperScript-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
     }
+
+    :root{
+      --bg:#dff3f1;
+      --bg-soft:#eefaf8;
+      --nav-bg:rgba(255,255,255,0.88);
+      --nav-border:rgba(118,180,189,0.26);
+      --primary:#69bcc6;
+      --primary-dark:#4d9eaa;
+      --primary-soft:#d8f1f0;
+      --secondary:#8d9fd4;
+      --card:#ffffff;
+      --text:#42526b;
+      --muted:#7b8aa0;
+      --danger:#e46c6c;
+      --good:#58a86d;
+      --warn:#e5a34e;
+      --shadow:0 14px 34px rgba(92, 140, 156, 0.14);
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:18px;
+      --gap:20px;
+    }
+
+    *{ box-sizing:border-box; }
 
     html,body{
       height:100%;
       margin:0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', 'Helvetica Neue', Arial;
-      background:var(--bg);
-      color:#0f172a;
-      font-size:18px; /* 基準字體放大，方便高齡閱讀 */
+      font-family:'ProperScript', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(182,223,229,0.65), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(190,229,218,0.48), transparent 24%),
+        linear-gradient(180deg,#dff3f1 0%, #edf8f7 100%);
+      color:var(--text);
+      font-size:18px;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(255,255,255,0.28), transparent 9%),
+        radial-gradient(circle at 84% 22%, rgba(255,255,255,0.22), transparent 11%),
+        radial-gradient(circle at 70% 82%, rgba(255,255,255,0.18), transparent 10%);
+      opacity:.95;
     }
 
     .page{
       min-height:100vh;
       display:flex;
       flex-direction:column;
+      position:relative;
+      z-index:1;
     }
 
-    /* 上方藍色導覽列 */
     .top-nav{
       position:sticky;
       top:0;
-      z-index:20;
+      z-index:50;
+      backdrop-filter:blur(12px);
       background:var(--nav-bg);
       border-bottom:1px solid var(--nav-border);
-      color:#fff;
+      box-shadow:0 10px 24px rgba(112,163,174,0.08);
     }
+
     .top-nav-inner{
-      max-width:1120px;
+      max-width:1180px;
       margin:0 auto;
-      padding:12px 22px;
+      padding:16px 24px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      box-sizing:border-box;
+      gap:16px;
     }
+
     .brand{
       display:flex;
       align-items:center;
-      gap:12px;
+      gap:14px;
     }
+
     .brand-logo{
-      width:38px;
-      height:38px;
-      border-radius:999px;
-      background:linear-gradient(135deg,#2563eb,#1d4ed8);
+      width:48px;
+      height:48px;
+      border-radius:50%;
+      background:linear-gradient(135deg,#7dcdd1,#8fa5d6);
       display:flex;
       align-items:center;
       justify-content:center;
       color:#fff;
-      font-weight:800;
-      font-size:22px;
+      font-size:24px;
+      box-shadow:0 8px 18px rgba(105,188,198,0.28);
     }
+
     .brand-text{
       display:flex;
       flex-direction:column;
+      gap:2px;
     }
+
     .brand-title{
-      font-size:20px;
-      font-weight:700;
-      color:#e0ecff;
+      font-size:24px;
+      color:#5a7f9a;
+      font-weight:600;
+      letter-spacing:0.02em;
     }
+
     .brand-sub{
       font-size:14px;
-      color:#c7d2fe;
+      color:#8aa0b4;
     }
 
     .nav-links{
       display:flex;
       align-items:center;
-      gap:16px;
-      font-size:16px;
+      gap:12px;
+      flex-wrap:wrap;
     }
-    .nav-link{
-      color:#bfdbfe;
+
+    .nav-link,
+    .menu-btn{
+      border:none;
       text-decoration:none;
-      padding:6px 12px;
+      color:#7e95a8;
+      background:rgba(255,255,255,0.65);
+      padding:10px 16px;
       border-radius:999px;
+      font-size:16px;
+      box-shadow:0 6px 14px rgba(131,165,173,0.10);
+      border:1px solid rgba(122,188,198,0.18);
+      cursor:pointer;
+      transition:.2s ease;
+      font-family:inherit;
     }
+
+    .nav-link:hover,
+    .menu-btn:hover,
     .nav-link.active{
-      color:#0b3d91;
-      background:#ffffff;
-      font-weight:600;
+      background:linear-gradient(135deg,#ffffff,#e7f8f7);
+      color:var(--primary-dark);
+      transform:translateY(-1px);
     }
 
     .container{
-      max-width:1120px;
+      max-width:1180px;
+      width:100%;
       margin:0 auto;
-      padding:24px 20px 28px;
-      box-sizing:border-box;
+      padding:28px 20px 34px;
       flex:1;
     }
 
-    /* Hero 區塊 */
     .hero{
-      background:linear-gradient(145deg,#ffffff,#e0edff);
-      border-radius:22px;
-      padding:22px 20px 20px;
-      box-shadow:0 8px 20px rgba(15,23,42,0.12);
-      border:1px solid #c7d2fe;
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(135deg, rgba(255,255,255,0.9), rgba(222,245,244,0.92));
+      border:1px solid rgba(111,187,197,0.18);
+      border-radius:34px;
+      padding:28px 26px 26px;
+      box-shadow:var(--shadow);
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:14px;
     }
+
+    .hero::after{
+      content:"";
+      position:absolute;
+      right:-80px;
+      top:-50px;
+      width:240px;
+      height:240px;
+      background:radial-gradient(circle, rgba(137,177,216,0.20), transparent 66%);
+      border-radius:50%;
+      pointer-events:none;
+    }
+
     .hero-title{
-      font-size:22px;
-      font-weight:700;
-      color:#0b3d91;
+      position:relative;
+      z-index:1;
+      font-size:34px;
+      color:#5d7ea1;
       display:flex;
       align-items:center;
-      gap:10px;
+      flex-wrap:wrap;
+      gap:12px;
+      font-weight:600;
     }
+
     .hero-pill{
-      font-size:13px;
-      padding:3px 10px;
+      font-size:14px;
+      padding:7px 14px;
       border-radius:999px;
-      background:#0b5ed7;
-      color:white;
+      background:linear-gradient(135deg,#7bc9ce,#90a4d8);
+      color:#fff;
+      box-shadow:0 8px 18px rgba(105,188,198,0.28);
     }
+
     .hero-desc{
-      font-size:16px;
-      color:#475569;
-      line-height:1.6;
+      position:relative;
+      z-index:1;
+      max-width:980px;
+      font-size:18px;
+      line-height:1.9;
+      color:#70859b;
     }
+
     .hero-meta{
+      position:relative;
+      z-index:1;
       display:flex;
       flex-wrap:wrap;
       gap:10px;
-      margin-top:4px;
-      font-size:15px;
-      color:#1d4ed8;
-    }
-    .hero-tag{
-      padding:4px 10px;
-      border-radius:999px;
-      background:#dbeafe;
-      color:#1e293b;
     }
 
-    .data-panel{
-      margin-top:20px;
+    .hero-tag{
+      padding:8px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.78);
+      border:1px solid rgba(112,183,196,0.18);
+      color:#6c8ca0;
+      box-shadow:0 6px 14px rgba(120,167,177,0.08);
+      font-size:15px;
+    }
+
+    .data-panel{ margin-top:22px; }
+
+    .panel-card{
+      background:rgba(255,255,255,0.88);
+      border:1px solid rgba(111,187,197,0.16);
+      border-radius:24px;
+      padding:16px 18px;
+      box-shadow:var(--shadow);
     }
 
     .patient-vitals{
-      background:#ffffff;
-      border-radius:18px;
-      padding:14px 16px;
-      box-shadow:0 4px 12px rgba(15,23,42,0.08);
-      border:1px solid #cbd5f5;
       display:flex;
       gap:16px;
       align-items:center;
       flex-wrap:wrap;
       font-size:18px;
-      color:#0f172a;
+      color:var(--text);
     }
+
     .pv-item{
       display:flex;
       align-items:center;
       gap:6px;
+      padding:8px 0;
     }
-    .pv-label{
-      color:#6b7280;
-    }
+
+    .pv-label{ color:var(--muted); }
+
     #edit-hw-btn,
     #edit-info-btn{
-      padding:6px 14px;
+      margin-left:auto;
+      padding:10px 18px;
       cursor:pointer;
-      background:#0b5ed7;
+      background:linear-gradient(135deg,#7ecacf,#91a4d8);
       color:white;
       border:none;
       border-radius:999px;
       font-size:16px;
+      font-family:inherit;
+      box-shadow:0 8px 18px rgba(105,188,198,0.22);
+      transition:.2s ease;
     }
 
-    .bmi-good{
-      color:#16a34a;
-      font-weight:700;
+    #edit-hw-btn:hover,
+    #edit-info-btn:hover,
+    .edu-btn:hover,
+    .close-btn:hover,
+    .action-btn:hover{
+      transform:translateY(-1px);
     }
-    .bmi-warn{
-      color:#ea580c;
-      font-weight:700;
-    }
-    .bmi-bad{
-      color:#dc2626;
-      font-weight:700;
-    }
+
+    .bmi-good{ color:var(--good); font-weight:700; }
+    .bmi-warn{ color:var(--warn); font-weight:700; }
+    .bmi-bad{ color:var(--danger); font-weight:700; }
 
     #bmi_note{
       font-size:15px;
-      max-width:320px;
-      line-height:1.5;
+      max-width:360px;
+      line-height:1.65;
     }
 
     .grid-title{
       margin-top:20px;
-      font-size:18px;
+      font-size:25px;
       font-weight:600;
-      color:#0f172a;
+      color:#5f7fa0;
       display:flex;
-      align-items:center;
-      gap:8px;
+      align-items:flex-end;
+      flex-wrap:wrap;
+      gap:10px;
     }
+
     .grid-title span{
       font-size:15px;
-      color:#64748b;
+      color:#89a0b0;
       font-weight:400;
     }
 
     .grid{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-      gap:var(--gap);
-      margin-top:12px;
-    }
+      grid-template-columns: repeat(3, 1fr);
+      gap:20px;
+      margin-top:12px;} 
 
     .card{
-      background:var(--card);
-      border-radius:var(--radius);
-      padding:14px;
-      box-shadow:0 6px 16px rgba(15,23,42,0.08);
-      border:1px solid #dbeafe;
+      background:linear-gradient(180deg, rgba(255,255,255,0.96), rgba(239,249,248,0.96));
+      border-radius:26px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(122,188,198,0.16);
       display:flex;
       flex-direction:column;
-      gap:8px;
+      gap:10px;
       cursor:pointer;
-      transition:transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
+      transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
       position:relative;
+      overflow:hidden;
     }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:auto -20px -36px auto;
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(140,177,214,0.16), transparent 68%);
+      pointer-events:none;
+    }
+
     .card:hover{
-      transform:translateY(-2px);
-      box-shadow:0 10px 24px rgba(15,23,42,0.14);
-      border-color:#93c5fd;
+      transform:translateY(-4px);
+      border-color:rgba(122,188,198,0.32);
+      box-shadow:0 18px 32px rgba(92,140,156,0.18);
     }
 
     .card-header{
@@ -256,27 +362,32 @@
       align-items:flex-start;
       gap:10px;
     }
+
     .card-title-wrap{
       display:flex;
-      gap:10px;
+      gap:12px;
       align-items:center;
     }
+
     .card-icon{
-      width:32px;
-      height:32px;
-      border-radius:999px;
-      background:#dbeafe;
+      width:42px;
+      height:42px;
+      border-radius:16px;
+      background:linear-gradient(135deg,#d8f1f0,#e9ecfb);
       display:flex;
       align-items:center;
       justify-content:center;
-      font-size:18px;
-      color:#1d4ed8;
+      font-size:20px;
+      color:#6993ad;
+      box-shadow:inset 0 0 0 1px rgba(122,188,198,0.16);
       flex-shrink:0;
     }
+
     .card h3{
       margin:0;
-      font-size:18px;
-      color:#0f172a;
+      font-size:21px;
+      color:#6784a1;
+      font-weight:600;
     }
 
     .value-row{
@@ -284,191 +395,197 @@
       align-items:baseline;
       gap:8px;
     }
+
     .value{
-      font-size:34px;
+      font-size:40px;
       font-weight:700;
+      color:#58789a;
+      line-height:1;
     }
 
     .meta{
       font-size:15px;
       color:var(--muted);
-      line-height:1.5;
+      line-height:1.7;
+      min-height:50px;
     }
+
     .abnormal{
-      color:#dc2626;
+      color:var(--danger)!important;
       font-weight:800;
     }
 
     .chart-wrap{
-      margin-top:10px;
-      padding:8px;
-      background:linear-gradient(180deg, #fff, #e0f2fe);
-      border-radius:12px;
+      margin-top:8px;
+      padding:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(216,241,240,0.88));
+      border-radius:18px;
       height:190px;
       box-sizing:border-box;
+      border:1px solid rgba(122,188,198,0.14);
     }
 
-    /* 衛教按鈕：大小高度一致 */
     .edu-btn{
       align-self:flex-end;
-      margin-top:4px;
-      padding:6px 16px;
+      margin-top:auto;
+      padding:8px 18px;
       font-size:15px;
       border-radius:999px;
-      border:1px solid #93c5fd;
-      background:#eff6ff;
-      color:#1d4ed8;
+      border:none;
+      background:linear-gradient(135deg,#e8f8f6,#edf0fb);
+      color:#6789a3;
       cursor:pointer;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      height:34px;
-      box-sizing:border-box;
-    }
-    .edu-btn:hover{
-      background:#1d4ed8;
-      color:#fff;
-      border-color:#1d4ed8;
+      min-height:38px;
+      font-family:inherit;
+      box-shadow:0 6px 12px rgba(120,167,177,0.10);
     }
 
-    /* 照護快捷選單 */
-    .menu{
-      position:relative;
-    }
+    .menu{ position:relative; }
+
     .menu-panel{
       position:absolute;
       right:0;
-      top:38px;
+      top:52px;
       background:#ffffff;
-      border-radius:12px;
-      box-shadow:0 10px 24px rgba(15,23,42,0.2);
-      padding:10px;
+      border-radius:18px;
+      box-shadow:0 18px 36px rgba(92,140,156,0.18);
+      padding:12px;
       display:none;
-      min-width:230px;
-      z-index:10;
-      border:1px solid #e5e7eb;
+      min-width:236px;
+      z-index:15;
+      border:1px solid rgba(122,188,198,0.18);
     }
-    .menu-panel.active{
-      display:block;
-    }
+
+    .menu-panel.active{ display:block; }
+
     .action-btn{
       display:flex;
       align-items:center;
       gap:10px;
-      padding:9px 10px;
-      border-radius:8px;
+      padding:10px 12px;
+      border-radius:12px;
       border:none;
       cursor:pointer;
       width:100%;
       font-weight:600;
       font-size:16px;
       color:#ffffff;
-    }
-    .a-urgent{background:#ef4444;}
-    .a-drip{background:#fb923c;}
-    .a-leak{background:#eab308;color:#1f2937;}
-    .a-fix{background:#0ea5e9;}
-    .a-toilet{background:#10b981;}
-    .a-clean{background:#6b7280;}
-
-    .menu-btn{
-      background:#0b5ed7;
-      border:1px solid #bfdbfe;
-      color:#ffffff;
-      padding:7px 12px;
-      border-radius:999px;
-      cursor:pointer;
-      font-size:16px;
+      font-family:inherit;
+      margin-bottom:8px;
+      box-shadow:0 8px 16px rgba(92,140,156,0.10);
     }
 
-    @media (max-width:560px){
-      html,body{
-        font-size:17px;
-      }
-      .patient-vitals{
-        flex-direction:column;
-        align-items:flex-start;
-      }
-      .hero{
-        padding:18px;
-      }
-    }
+    .action-btn:last-child{ margin-bottom:0; }
+    .a-urgent{background:#e78383;}
+    .a-drip{background:#e8ad73;}
+    .a-leak{background:#e7cf7d;color:#655741;}
+    .a-fix{background:#79b9dc;}
+    .a-toilet{background:#79c4aa;}
+    .a-clean{background:#9aa9bd;}
 
-    /* ===== 衛教彈窗 ===== */
     #eduModal {
       position: fixed;
       z-index: 9999;
       inset: 0;
-      background: rgba(0,0,0,0.55);
-      display: none;            /* flex when 開啟 */
+      background: rgba(88, 118, 135, 0.35);
+      display: none;
       justify-content: center;
       align-items: center;
+      padding:18px;
     }
 
     #eduModal .modal-content {
-      background: #ffffff;
-      width: 90%;
-      max-width: 1200px;
+      background: linear-gradient(180deg,#ffffff,#f4fbfa);
+      width: min(92vw, 920px);
       max-height: 95%;
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 26px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      box-shadow:0 10px 30px rgba(15,23,42,0.35);
+      box-shadow:0 18px 40px rgba(76,110,130,0.18);
+      border:1px solid rgba(122,188,198,0.16);
     }
 
     #eduModal .modal-body {
       flex: 1;
       overflow-y: auto;
-      padding: 10px;
+      padding: 10px 12px;
     }
 
-    #eduModal .modal-body img {
-      width: 100%;
-      border-radius: 10px;
-      display:block;
+    #eduTextTitle{
+      font-size:28px;
+      font-weight:600;
+      color:#6988a4;
+      margin-bottom:12px;
+    }
+
+    #eduTextContent{
+      font-size:18px;
+      line-height:1.95;
+      color:#6f8397;
+      white-space:pre-line;
     }
 
     #eduModal .close-btn {
-      margin-top: 10px;
-      background: #0b5ed7;
+      margin-top: 12px;
+      background: linear-gradient(135deg,#7ecacf,#91a4d8);
       color: white;
       padding: 12px;
       font-size: 16px;
       border: none;
-      border-radius: 10px;
+      border-radius: 999px;
       cursor: pointer;
+      font-family:inherit;
     }
-    #eduModal .close-btn:hover{
-      background:#0946a3;
+
+    @media (max-width: 900px){
+      .top-nav-inner{ flex-direction:column; align-items:flex-start; }
+      .nav-links{ width:100%; }
+      .hero-title{ font-size:28px; }
+      .grid-title{ font-size:22px; }
+    }
+
+    @media (max-width: 560px){
+      html,body{ font-size:17px; }
+      .container{ padding:18px 14px 24px; }
+      .patient-vitals{ flex-direction:column; align-items:flex-start; }
+      #edit-hw-btn,
+      #edit-info-btn{ margin-left:0; }
+      .hero{ padding:22px 18px; border-radius:26px; }
+      .hero-title{ font-size:24px; }
+      .brand-title{ font-size:21px; }
+      .card h3{ font-size:19px; }
+      .value{ font-size:36px; }
     }
   </style>
 </head>
 <body>
 <div class="page">
-  <!-- 上方藍色導覽列 -->
   <header class="top-nav">
     <div class="top-nav-inner">
       <div class="brand">
-        <div class="brand-logo">H</div>
+        <div class="brand-logo">✦</div>
         <div class="brand-text">
-          <div class="brand-title">智慧健康小幫手</div>
-          <div class="brand-sub">IoT 生理監測 & 衛教資訊</div>
+          <div class="brand-title">大學生健康IoT平台</div>
+          <div class="brand-sub">soft wellness dashboard • self-care style</div>
         </div>
       </div>
       <div class="nav-links">
-        <a class="nav-link active" href="#">生理監測儀表板</a>
-        <a class="nav-link" href="#">衛教圖文</a>
+        <a class="nav-link active" href="#">健康儀表板</a>
+        <a class="nav-link" href="#">趨勢觀察</a>
         <div class="menu">
-          <button class="menu-btn" id="menuToggle">照護快捷功能 ▾</button>
+          <button class="menu-btn" id="menuToggle">AI 小幫手 ▾</button>
           <div class="menu-panel" id="menuPanel" aria-hidden="true">
-            <button class="action-btn a-urgent" data-action="urgent">緊急呼叫</button>
-            <button class="action-btn a-drip" data-action="change_drip">更換點滴</button>
-            <button class="action-btn a-leak" data-action="drip_leak">點滴漏針</button>
-            <button class="action-btn a-fix" data-action="repair">修報通知</button>
-            <button class="action-btn a-toilet" data-action="toilet">如廁協助</button>
-            <button class="action-btn a-clean" data-action="clean">環境清潔</button>
+            <button class="action-btn a-urgent" data-action="urgent">立即提醒</button>
+            <button class="action-btn a-drip" data-action="change_drip">活動建議</button>
+            <button class="action-btn a-leak" data-action="drip_leak">睡眠提醒</button>
+            <button class="action-btn a-fix" data-action="repair">壓力舒緩</button>
+            <button class="action-btn a-toilet" data-action="toilet">久坐提醒</button>
+            <button class="action-btn a-clean" data-action="clean">健康摘要</button>
           </div>
         </div>
       </div>
@@ -476,28 +593,26 @@
   </header>
 
   <main class="container">
-    <!-- Hero 區 -->
     <section class="hero">
       <div class="hero-title">
-        智慧健康 IoT 生理監測
+        Self-care 健康監測儀表板
         <span class="hero-pill">即時監測中</span>
       </div>
       <div class="hero-desc">
-        結合感測器與儀表板，即時掌握個案的生命徵象、體成分與睡眠狀態，
-        並提供對應的衛教說明，協助照護人員快速判讀與紀錄。
+        結合感測器與儀表板，即時掌握個案的活動狀態、睡眠表現與生理變化， 並提供AI小幫手給予建議，讓學生們更了解自己的健康狀況。
       </div>
       <div class="hero-meta">
-        <span class="hero-tag">✓ 即時數據</span>
-        <span class="hero-tag">✓ 趨勢圖一鍵展開</span>
-        <span class="hero-tag">✓ 搭配衛教提示</span>
+        <span class="hero-tag">✿ 方便觀察</span>
+        <span class="hero-tag">✿ 即時更新</span>
+        <span class="hero-tag">✿ 專業分析
+</span>
       </div>
     </section>
 
     <section class="data-panel">
-      <!-- 病患基本資訊 -->
-      <div class="patient-vitals">
+      <div class="panel-card patient-vitals">
         <div class="pv-item">
-          <span class="pv-label">病患：</span>
+          <span class="pv-label">使用者：</span>
           <span id="patient-info-name">--</span>
         </div>
         <div class="pv-item">
@@ -507,10 +622,9 @@
         <button id="edit-info-btn">修改基本資料</button>
       </div>
 
-      <div style="height:10px;"></div>
+      <div style="height:12px;"></div>
 
-      <!-- 身高體重 & BMI -->
-      <div class="patient-vitals">
+      <div class="panel-card patient-vitals">
         <div class="pv-item">
           <span class="pv-label">身高：</span><b id="height">--</b><span> cm</span>
         </div>
@@ -525,183 +639,144 @@
       </div>
 
       <div class="grid-title">
-        生理監測卡片
-        <span>點擊同一排任一卡片，可展開 / 收合該排所有趨勢圖；右下角「衛教」可查看說明</span>
+        今日健康卡片
+        <span>點同一排卡片可展開趨勢圖，右下角可查看衛教內容</span>
       </div>
 
-      <!-- 卡片區 -->
       <div class="grid" id="cards">
-        <!-- 第一排：脈搏 / 血氧 / 體溫 -->
-        <div class="card" data-key="pulse" data-row="1">
+        <div class="card" data-key="heart_rate" data-row="1">
           <div class="card-header">
             <div class="card-title-wrap">
               <div class="card-icon">心</div>
-              <h3>脈搏 (bpm)</h3>
+              <h3>心率 (bpm)</h3>
             </div>
           </div>
-          <div class="value-row">
-            <div class="value" id="pulse">--</div>
-          </div>
-          <div class="meta">正常約 50–100，下限或超過時會以紅字提醒。</div>
-          <button class="edu-btn" data-topic="pulse">衛教</button>
+          <div class="value-row"><div class="value" id="heart_rate">--</div></div>
+          <div class="meta">一般靜息心率約 50–100，過快或過慢都值得留意。</div>
+          <button class="edu-btn" data-topic="heart_rate">衛教</button>
         </div>
 
-        <div class="card" data-key="spo2" data-row="1">
+        <div class="card" data-key="steps" data-row="1">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">步</div>
+              <h3>步數 (steps)</h3>
+            </div>
+          </div>
+          <div class="value-row"><div class="value" id="steps">--</div></div>
+          <div class="meta">可反映日常活動量，步數過低表示活動不足。</div>
+          <button class="edu-btn" data-topic="steps">衛教</button>
+        </div>
+
+        <div class="card" data-key="active_minutes" data-row="1">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">動</div>
+              <h3>運動時間 (分鐘)</h3>
+            </div>
+          </div>
+          <div class="value-row"><div class="value" id="active_minutes">--</div></div>
+          <div class="meta">建議每週累積足夠中等強度活動，幫助維持體能。</div>
+          <button class="edu-btn" data-topic="active_minutes">衛教</button>
+        </div>
+
+        <div class="card" data-key="sleep_hours" data-row="2">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">眠</div>
+              <h3>睡眠時數 (hr)</h3>
+            </div>
+          </div>
+          <div class="value-row"><div class="value" id="sleep_hours">--</div></div>
+          <div class="meta">成人通常建議 7–9 小時，過少或過多都需觀察。</div>
+          <button class="edu-btn" data-topic="sleep_hours">衛教</button>
+        </div>
+
+        <div class="card" data-key="sleep_quality" data-row="2">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">質</div>
+              <h3>睡眠品質</h3>
+            </div>
+          </div>
+          <div class="value-row"><div class="value" id="sleep_quality">--</div></div>
+          <div class="meta">以 0–100 顯示，分數越高代表睡眠恢復效果越好。</div>
+          <button class="edu-btn" data-topic="sleep_quality">衛教</button>
+        </div>
+
+        <div class="card" data-key="sedentary_time" data-row="2">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">坐</div>
+              <h3>久坐時間 (分鐘)</h3>
+            </div>
+          </div>
+          <div class="value-row"><div class="value" id="sedentary_time">--</div></div>
+          <div class="meta">久坐時間過長可能增加代謝與肌肉骨骼負擔。</div>
+          <button class="edu-btn" data-topic="sedentary_time">衛教</button>
+        </div>
+
+        <div class="card" data-key="calories" data-row="3">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <div class="card-icon">卡</div>
+              <h3>卡路里消耗 (kcal)</h3>
+            </div>
+          </div>
+          <div class="value-row"><div class="value" id="calories">--</div></div>
+          <div class="meta">可用來觀察每日活動量與能量消耗變化。</div>
+          <button class="edu-btn" data-topic="calories">衛教</button>
+        </div>
+
+        <div class="card" data-key="spo2" data-row="3">
           <div class="card-header">
             <div class="card-title-wrap">
               <div class="card-icon">氧</div>
               <h3>血氧 SpO₂ (%)</h3>
             </div>
           </div>
-          <div class="value-row">
-            <div class="value" id="spo2">--</div>
-          </div>
-          <div class="meta">一般建議 ≥ 95%，低於 90% 為明顯異常需留意。</div>
+          <div class="value-row"><div class="value" id="spo2">--</div></div>
+          <div class="meta">一般建議 ≥ 95%，若明顯下降需進一步留意。</div>
           <button class="edu-btn" data-topic="spo2">衛教</button>
         </div>
 
-        <div class="card" data-key="temperature" data-row="1">
+        <div class="card" data-key="hrv" data-row="3">
           <div class="card-header">
             <div class="card-title-wrap">
-              <div class="card-icon">溫</div>
-              <h3>體溫 (°C)</h3>
+              <div class="card-icon">律</div>
+              <h3>HRV (ms)</h3>
             </div>
           </div>
-          <div class="value-row">
-            <div class="value" id="temp">--</div>
-          </div>
-          <div class="meta">約 35.7–37.9°C，低於 35.7 或高於 38 會標示為異常。</div>
-          <button class="edu-btn" data-topic="temperature">衛教</button>
-        </div>
-
-        <!-- 第二排：血壓 / 體脂 -->
-        <div class="card" data-key="bp_sys" data-row="2">
-          <div class="card-header">
-            <div class="card-title-wrap">
-              <div class="card-icon">壓</div>
-              <h3>血壓 - 收縮壓 (mmHg)</h3>
-            </div>
-          </div>
-          <div class="value-row">
-            <div class="value" id="bp_sys">--</div>
-          </div>
-          <div class="meta">一般建議約 90–120 mmHg，過高或過低需評估。</div>
-          <button class="edu-btn" data-topic="bp_sys">衛教</button>
-        </div>
-
-        <div class="card" data-key="bp_dia" data-row="2">
-          <div class="card-header">
-            <div class="card-title-wrap">
-              <div class="card-icon">壓</div>
-              <h3>血壓 - 舒張壓 (mmHg)</h3>
-            </div>
-          </div>
-          <div class="value-row">
-            <div class="value" id="bp_dia">--</div>
-          </div>
-          <div class="meta">約 60–80 mmHg，偏離範圍時會以紅字顯示。</div>
-          <button class="edu-btn" data-topic="bp_dia">衛教</button>
-        </div>
-
-        <div class="card" data-key="body_fat" data-row="2">
-          <div class="card-header">
-            <div class="card-title-wrap">
-              <div class="card-icon">脂</div>
-              <h3>體脂率 (%)</h3>
-            </div>
-          </div>
-          <div class="value-row">
-            <div class="value" id="body_fat">--</div>
-          </div>
-          <div class="meta">約 14–35% 為常見範圍；依性別與年齡略有差異。</div>
-          <button class="edu-btn" data-topic="body_fat">衛教</button>
-        </div>
-
-        <!-- 第三排：水分 / BMR / 內臟脂肪 / 睡眠 -->
-        <div class="card" data-key="water" data-row="3">
-          <div class="card-header">
-            <div class="card-title-wrap">
-              <div class="card-icon">水</div>
-              <h3>身體水分 (%)</h3>
-            </div>
-          </div>
-          <div class="value-row">
-            <div class="value" id="water">--</div>
-          </div>
-          <div class="meta">女性約 45–60%，男性約 55–65%偏低時可能代表脫水、需補充水分。</div>
-          <button class="edu-btn" data-topic="water">衛教</button>
-        </div>
-
-        <div class="card" data-key="bmr" data-row="3">
-          <div class="card-header">
-            <div class="card-title-wrap">
-              <div class="card-icon">代</div>
-              <h3>基礎代謝 (kcal)</h3>
-            </div>
-          </div>
-          <div class="value-row">
-            <div class="value" id="bmr">--</div>
-          </div>
-          <div class="meta">靜止狀態下每日消耗熱量，與年齡、性別、肌肉量相關。</div>
-          <button class="edu-btn" data-topic="bmr">衛教</button>
-        </div>
-
-        <div class="card" data-key="visceral_fat" data-row="3">
-          <div class="card-header">
-            <div class="card-title-wrap">
-              <div class="card-icon">臟</div>
-              <h3>內臟脂肪 (等級)</h3>
-            </div>
-          </div>
-          <div class="value-row">
-            <div class="value" id="visceral_fat">--</div>
-          </div>
-          <div class="meta">1-9為正常值範圍，等級愈高，與代謝症候群、心血管疾病風險相關。</div>
-          <button class="edu-btn" data-topic="visceral_fat">衛教</button>
-        </div>
-
-        <div class="card" data-key="sleep_level" data-row="3">
-          <div class="card-header">
-            <div class="card-title-wrap">
-              <div class="card-icon">眠</div>
-              <h3>睡眠深淺度</h3>
-            </div>
-          </div>
-          <div class="value-row">
-            <div class="value" id="sleep_level">--</div>
-          </div>
-          <div class="meta">0=淺眠、1=中等、2=深睡，可搭配睡眠時間一起評估。</div>
-          <button class="edu-btn" data-topic="sleep_level">衛教</button>
+          <div class="value-row"><div class="value" id="hrv">--</div></div>
+          <div class="meta">心率變異度可反映壓力恢復與自律神經平衡狀況。</div>
+          <button class="edu-btn" data-topic="hrv">衛教</button>
         </div>
       </div>
     </section>
   </main>
 </div>
 
-<!-- ===== 通用衛教彈出視窗 ===== -->
 <div id="eduModal">
   <div class="modal-content">
     <div class="modal-body">
-      <!-- 由 JavaScript 動態設定 src 與 alt -->
-      <img id="eduImage" src="" alt="衛教圖片">
+      <div id="eduTextTitle"></div>
+      <div id="eduTextContent"></div>
     </div>
     <button class="close-btn" onclick="closeEdu()">返回主頁</button>
   </div>
 </div>
 
 <script>
-/* ===== 緩衝區：折線圖用 ===== */
 const buffers = {
-  pulse: [],
+  heart_rate: [],
+  steps: [],
+  active_minutes: [],
+  sleep_hours: [],
+  sleep_quality: [],
+  sedentary_time: [],
+  calories: [],
   spo2: [],
-  temperature: [],
-  bp_sys: [],
-  bp_dia: [],
-  body_fat: [],
-  water: [],
-  bmr: [],
-  visceral_fat: [],
-  sleep_level: []
+  hrv: []
 };
 
 function pushBuffer(key, value){
@@ -713,7 +788,6 @@ function pushBuffer(key, value){
   }
 }
 
-/* ===== 個案基本資料載入 ===== */
 (function loadPatient() {
   const name   = localStorage.getItem("patient_name")   || "未填寫";
   const gender = localStorage.getItem("patient_gender") || "未填";
@@ -723,32 +797,27 @@ function pushBuffer(key, value){
   document.getElementById("patient-info-name").innerText = name;
   document.getElementById("patient-info-detail").innerText =
     `性別：${gender} ｜ 出生：${birth || "未填寫"} ｜ 身分證：${idno || "未填寫"}`;
-
-  document.getElementById("edit-info-btn").addEventListener("click", () => {
-    localStorage.setItem("edit_mode", "info");
-    window.location.href = "patient_info.html";
-  });
 })();
+document.getElementById("edit-info-btn").addEventListener("click", () => {
+  localStorage.setItem("edit_mode", "info");
+  window.location.href = "patient_entry.html";
+});
 
-/* ===== 身高體重載入 ===== */
 document.getElementById("edit-hw-btn").addEventListener("click", () => {
   localStorage.setItem("edit_mode", "height_weight");
-  window.location.href = "height_weight.html";
+  window.location.href = "patient_entry.html";
 });
 
 const state = {
-  pulse: 78,
+  heart_rate: 78,
+  steps: 4200,
+  active_minutes: 35,
+  sleep_hours: 7.2,
+  sleep_quality: 82,
+  sedentary_time: 180,
+  calories: 1680,
   spo2: 97,
-  temperature: 36.5,
-  bp_sys: 118,
-  bp_dia: 76,
-
-  body_fat: null,
-  water: null,
-  bmr: null,
-  visceral_fat: null,
-  sleep_level: null,
-
+  hrv: 48,
   height: null,
   weight: null,
   bmi: null
@@ -770,7 +839,6 @@ const state = {
   renderValues();
 })();
 
-/* ===== BMI 計算 ===== */
 function calcBMI() {
   const bmiEl   = document.getElementById("bmi");
   const noteEl  = document.getElementById("bmi_note");
@@ -810,7 +878,6 @@ function calcBMI() {
   }
 }
 
-/* ===== Chart 管理 ===== */
 const charts = {};
 
 function createChartFor(key){
@@ -877,70 +944,64 @@ function updateChartFor(key){
   chart.update('none');
 }
 
-/* ===== 數值顯示 & 異常 ===== */
 function renderValues(){
-  const pulseEl = document.getElementById('pulse');
-  if (state.pulse != null){
-    pulseEl.innerText = state.pulse;
-    pulseEl.className = (state.pulse>100 || state.pulse<50) ? 'abnormal' : '';
+  const heartRateEl = document.getElementById('heart_rate');
+  if (state.heart_rate != null){
+    heartRateEl.innerText = Math.round(state.heart_rate);
+    heartRateEl.className = (state.heart_rate > 100 || state.heart_rate < 50) ? 'abnormal' : '';
+  }
+
+  const stepsEl = document.getElementById('steps');
+  if (state.steps != null){
+    stepsEl.innerText = Math.round(state.steps);
+    stepsEl.className = (state.steps < 3000) ? 'abnormal' : '';
+  }
+
+  const activeEl = document.getElementById('active_minutes');
+  if (state.active_minutes != null){
+    activeEl.innerText = Math.round(state.active_minutes);
+    activeEl.className = (state.active_minutes < 20) ? 'abnormal' : '';
+  }
+
+  const sleepHoursEl = document.getElementById('sleep_hours');
+  if (state.sleep_hours != null){
+    sleepHoursEl.innerText = Number(state.sleep_hours).toFixed(1);
+    sleepHoursEl.className = (state.sleep_hours < 6 || state.sleep_hours > 10) ? 'abnormal' : '';
+  }
+
+  const sleepQualityEl = document.getElementById('sleep_quality');
+  if (state.sleep_quality != null){
+    sleepQualityEl.innerText = Math.round(state.sleep_quality);
+    sleepQualityEl.className = (state.sleep_quality < 60) ? 'abnormal' : '';
+  }
+
+  const sedentaryEl = document.getElementById('sedentary_time');
+  if (state.sedentary_time != null){
+    sedentaryEl.innerText = Math.round(state.sedentary_time);
+    sedentaryEl.className = (state.sedentary_time > 480) ? 'abnormal' : '';
+  }
+
+  const caloriesEl = document.getElementById('calories');
+  if (state.calories != null){
+    caloriesEl.innerText = Math.round(state.calories);
+    caloriesEl.className = (state.calories < 1200) ? 'abnormal' : '';
   }
 
   const spo2El = document.getElementById('spo2');
   if (state.spo2 != null){
-    spo2El.innerText = state.spo2;
-    spo2El.className = (state.spo2<90) ? 'abnormal' : '';
+    spo2El.innerText = Math.round(state.spo2);
+    spo2El.className = (state.spo2 < 90) ? 'abnormal' : '';
   }
 
-  const tempEl = document.getElementById('temp');
-  if (state.temperature != null){
-    tempEl.innerText = state.temperature.toFixed(1);
-    tempEl.className = (state.temperature>37.9 || state.temperature<35.7) ? 'abnormal' : '';
-  }
-
-  const sysEl = document.getElementById('bp_sys');
-  if (state.bp_sys != null){
-    sysEl.innerText = state.bp_sys;
-    sysEl.className = (state.bp_sys>120 || state.bp_sys<90) ? 'abnormal' : '';
-  }
-  const diaEl = document.getElementById('bp_dia');
-  if (state.bp_dia != null){
-    diaEl.innerText = state.bp_dia;
-    diaEl.className = (state.bp_dia>80 || state.bp_dia<60) ? 'abnormal' : '';
+  const hrvEl = document.getElementById('hrv');
+  if (state.hrv != null){
+    hrvEl.innerText = Math.round(state.hrv);
+    hrvEl.className = (state.hrv < 20) ? 'abnormal' : '';
   }
 
   calcBMI();
-
-  if(state.body_fat !== null){
-    const el = document.getElementById("body_fat");
-    el.innerText = state.body_fat.toFixed ? state.body_fat.toFixed(1) : state.body_fat;
-    el.className = (state.body_fat < 14 || state.body_fat > 35) ? 'abnormal' : '';
-  }
-
-  if(state.water !== null){
-    const el = document.getElementById("water");
-    el.innerText = state.water.toFixed ? state.water.toFixed(1) : state.water;
-    el.className = (state.water < 45 || state.water > 65) ? 'abnormal' : '';
-  }
-
-  if(state.bmr !== null){
-    const el = document.getElementById("bmr");
-    el.innerText = Math.round(state.bmr);
-    el.className = (state.bmr < 1200 || state.bmr > 2000) ? 'abnormal' : '';
-  }
-
-  if(state.visceral_fat !== null){
-    const el = document.getElementById("visceral_fat");
-    el.innerText = Math.round(state.visceral_fat);
-    el.className = (state.visceral_fat >= 10) ? 'abnormal' : '';
-  }
-
-  if(state.sleep_level !== null){
-    const el = document.getElementById("sleep_level");
-    el.innerText = state.sleep_level;
-  }
 }
 
-/* ===== 卡片點擊：同一排一起開關圖表 ===== */
 document.querySelectorAll('.card').forEach(card=>{
   card.addEventListener('click', ()=>{
     const row = card.dataset.row;
@@ -948,7 +1009,6 @@ document.querySelectorAll('.card').forEach(card=>{
 
     const rowCards = document.querySelectorAll(`.card[data-row="${row}"]`);
 
-    // 這排有沒有已經開圖表
     let anyHasChart = false;
     rowCards.forEach(c=>{
       const key = c.dataset.key;
@@ -972,55 +1032,66 @@ document.querySelectorAll('.card').forEach(card=>{
   });
 });
 
-/* ===== 衛教圖片對照表 ===== */
-/* 這裡依照你實際的檔名放圖片 */
-const eduImages = {
-  pulse:          'edu_pulse.png',          // 脈搏
-  spo2:           'spo2_education.png',     // 血氧（原本那張）
-  temperature:    'edu_temperature.png',    // 體溫
-  bp_sys:         'edu_bp_sys.png',         // 收縮壓
-  bp_dia:         'edu_bp_dia.png',         // 舒張壓
-  body_fat:       'edu_body_fat.png',       // 體脂率
-  water:          'edu_water.png',          // 身體水分
-  bmr:            'edu_bmr.png',            // 基礎代謝
-  visceral_fat:   'edu_visceral_fat.png',   // 內臟脂肪
-  sleep_level:    'edu_sleep_level.png'     // 睡眠深淺度
+const eduTexts = {
+  heart_rate: {
+    title: "心率衛教",
+    content: "心率代表每分鐘心臟跳動次數。\n\n一般成人靜息時常見約為 50–100 次/分鐘。\n若長期過快，可能與壓力、睡眠不足、咖啡因或疾病有關；若過慢且伴隨頭暈不適，也建議進一步評估。"
+  },
+  steps: {
+    title: "步數衛教",
+    content: "步數可反映一天的身體活動量。\n\n長時間步數偏低，表示活動不足，可能影響心肺耐力與代謝健康。\n建議依個人狀況逐步增加日常走動與活動時間。"
+  },
+  active_minutes: {
+    title: "運動時間衛教",
+    content: "運動時間可幫助了解一天是否有足夠活動。\n\n規律運動有助於控制體重、改善睡眠與降低壓力。\n可從短時間開始累積，逐步建立固定運動習慣。"
+  },
+  sleep_hours: {
+    title: "睡眠時數衛教",
+    content: "睡眠時數是觀察恢復與作息規律的重要指標。\n\n成人通常建議 7–9 小時。\n長期睡太少可能影響專注力、情緒與免疫功能。"
+  },
+  sleep_quality: {
+    title: "睡眠品質衛教",
+    content: "睡眠品質反映整體休息是否充足。\n\n除了睡多久，也要看是否容易醒來、睡醒是否有恢復感。\n維持固定作息、減少睡前滑手機，都有助於改善品質。"
+  },
+  sedentary_time: {
+    title: "久坐時間衛教",
+    content: "久坐時間過長，可能增加腰背不適與代謝風險。\n\n建議每坐一段時間就起身活動、伸展或走動幾分鐘。\n把久坐打斷，比一直坐著更有幫助。"
+  },
+  calories: {
+    title: "卡路里消耗衛教",
+    content: "卡路里消耗可幫助了解每日活動量與能量支出。\n\n若活動量提升，消耗通常也會增加。\n可搭配飲食與運動紀錄，幫助健康管理。"
+  },
+  spo2: {
+    title: "血氧衛教",
+    content: "血氧飽和度表示血液攜帶氧氣的狀況。\n\n一般常見值約在 95% 以上。\n若數值偏低，且合併喘、胸悶或不舒服，應儘快留意與評估。"
+  },
+  hrv: {
+    title: "HRV 衛教",
+    content: "HRV 是心率變異度，可反映自律神經與壓力恢復狀態。\n\n數值並非越高越絕對好，而是要看個人平常趨勢。\n若持續偏低，可能與疲勞、壓力大或睡眠不足有關。"
+  }
 };
 
-const eduAltText = {
-  pulse:          '脈搏衛教圖',
-  spo2:           '血氧衛教圖',
-  temperature:    '體溫衛教圖',
-  bp_sys:         '收縮壓衛教圖',
-  bp_dia:         '舒張壓衛教圖',
-  body_fat:       '體脂率衛教圖',
-  water:          '身體水分衛教圖',
-  bmr:            '基礎代謝衛教圖',
-  visceral_fat:   '內臟脂肪衛教圖',
-  sleep_level:    '睡眠深淺度衛教圖'
-};
-
-/* ===== 衛教按鈕：全部使用彈窗，依 topic 換圖 ===== */
 document.querySelectorAll('.edu-btn').forEach(btn=>{
   btn.addEventListener('click', (e)=>{
-    e.stopPropagation();  // 不觸發卡片點擊（避免順便展開圖表）
+    e.stopPropagation();
     const topic = btn.dataset.topic;
     if(!topic) return;
     openEdu(topic);
   });
 });
 
-/* ===== 衛教彈窗控制（通用） ===== */
 function openEdu(topic){
   const modal = document.getElementById('eduModal');
-  const img   = document.getElementById('eduImage');
+  const titleEl = document.getElementById('eduTextTitle');
+  const contentEl = document.getElementById('eduTextContent');
 
-  const src = eduImages[topic] || 'edu_default.png';
-  const alt = eduAltText[topic] || '衛教圖片';
+  const item = eduTexts[topic] || {
+    title: "衛教說明",
+    content: "此項目尚未提供衛教內容。"
+  };
 
-  img.src = src;
-  img.alt = alt;
-
+  titleEl.innerText = item.title;
+  contentEl.innerText = item.content;
   modal.style.display = 'flex';
 }
 
@@ -1028,22 +1099,19 @@ function closeEdu(){
   document.getElementById('eduModal').style.display = 'none';
 }
 
-/* ===== WebSocket / 模擬資料 ===== */
 function onNewMeasurement(payload){
   const map = {
-    pulse: 'pulse',
+    heart_rate: 'heart_rate',
+    steps: 'steps',
+    active_minutes: 'active_minutes',
+    sleep_hours: 'sleep_hours',
+    sleep_quality: 'sleep_quality',
+    sedentary_time: 'sedentary_time',
+    calories: 'calories',
     spo2: 'spo2',
-    temperature: 'temperature',
-    temp_c: 'temperature',
-    bp_sys: 'bp_sys',
-    bp_dia: 'bp_dia',
+    hrv: 'hrv',
     height: 'height',
-    weight: 'weight',
-    body_fat: 'body_fat',
-    water: 'water',
-    bmr: 'bmr',
-    visceral_fat: 'visceral_fat',
-    sleep_level: 'sleep_level'
+    weight: 'weight'
   };
 
   for(const k in map){
@@ -1106,37 +1174,29 @@ function onNewMeasurement(payload){
 })();
 
 function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function randFloat(min,max){ return Math.random()*(max-min)+min; }
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
 function localMockStep(){
-  if(state.body_fat === null)     state.body_fat = 24;
-  if(state.water === null)        state.water = 55;
-  if(state.bmr === null)          state.bmr = 1300;
-  if(state.visceral_fat === null) state.visceral_fat = 7;
-  if(state.sleep_level === null)  state.sleep_level = 1;
+  state.heart_rate     = clamp((state.heart_rate || 78) + randInt(-5,5), 45, 120);
+  state.steps          = clamp((state.steps || 4200) + randInt(20,180), 0, 30000);
+  state.active_minutes = clamp((state.active_minutes || 35) + randInt(0,3), 0, 300);
+  state.sleep_hours    = Math.round(clamp((state.sleep_hours || 7.2) + randFloat(-0.1,0.1), 3, 12) * 10) / 10;
+  state.sleep_quality  = clamp((state.sleep_quality || 82) + randInt(-3,3), 0, 100);
+  state.sedentary_time = clamp((state.sedentary_time || 180) + randInt(1,10), 0, 900);
+  state.calories       = clamp((state.calories || 1680) + randInt(5,20), 800, 4000);
+  state.spo2           = clamp((state.spo2 || 97) + randInt(-1,1), 84, 99);
+  state.hrv            = clamp((state.hrv || 48) + randInt(-3,3), 10, 120);
 
-  state.pulse       = clamp((state.pulse || 78) + randInt(-6,6), 45, 120);
-  state.spo2        = clamp((state.spo2 || 97) + randInt(-2,2), 84, 99);
-  state.temperature = Math.round(clamp((state.temperature || 36.5) + (Math.random()-0.5)*0.3, 35.0, 39.0)*10)/10;
-  state.bp_sys      = clamp((state.bp_sys || 118) + randInt(-10,10), 70, 139);
-  state.bp_dia      = clamp((state.bp_dia || 76) + randInt(-3,3), 40, 89);
-
-  state.body_fat    = clamp(state.body_fat + (Math.random()-0.5)*0.3, 8, 40);
-  state.water       = clamp(state.water    + (Math.random()-0.5)*0.5, 40, 70);
-  state.bmr         = clamp(state.bmr      + randInt(-20,20), 800, 2200);
-  state.visceral_fat= clamp(state.visceral_fat + randInt(-1,1)*0.2, 3, 20);
-  state.sleep_level = clamp(state.sleep_level + randInt(-1,1), 0, 2);
-
-  pushBuffer('pulse', state.pulse);
+  pushBuffer('heart_rate', state.heart_rate);
+  pushBuffer('steps', state.steps);
+  pushBuffer('active_minutes', state.active_minutes);
+  pushBuffer('sleep_hours', state.sleep_hours);
+  pushBuffer('sleep_quality', state.sleep_quality);
+  pushBuffer('sedentary_time', state.sedentary_time);
+  pushBuffer('calories', state.calories);
   pushBuffer('spo2', state.spo2);
-  pushBuffer('temperature', state.temperature);
-  pushBuffer('bp_sys', state.bp_sys);
-  pushBuffer('bp_dia', state.bp_dia);
-  pushBuffer('body_fat', state.body_fat);
-  pushBuffer('water', state.water);
-  pushBuffer('bmr', state.bmr);
-  pushBuffer('visceral_fat', state.visceral_fat);
-  pushBuffer('sleep_level', state.sleep_level);
+  pushBuffer('hrv', state.hrv);
 
   renderValues();
   for(const key of Object.keys(charts)) updateChartFor(key);
@@ -1147,11 +1207,11 @@ function startLocalMock(){
   setInterval(localMockStep, 3000);
 }
 
-/* 照護快捷選單 */
 document.getElementById('menuToggle').addEventListener('click', ()=>{
   const p = document.getElementById('menuPanel');
   p.classList.toggle('active');
 });
+
 document.querySelectorAll('.action-btn').forEach(btn=>{
   btn.addEventListener('click', async (e)=>{
     e.stopPropagation();
@@ -1170,4 +1230,4 @@ document.querySelectorAll('.action-btn').forEach(btn=>{
 });
 </script>
 </body>
-</html> 
+</html>

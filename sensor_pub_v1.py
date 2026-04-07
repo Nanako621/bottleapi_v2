@@ -15,7 +15,7 @@ if sys.platform.startswith("win"):
 
 from aiomqtt import Client, MqttError
 
-# === MQTT 設定===
+# === MQTT 設定 ===
 HOST   = "ca6d193d786e4190b3e0399b919e4be7.s1.eu.hivemq.cloud"
 PORT   = 8883
 USER   = "supubandsub"
@@ -31,31 +31,37 @@ def make_tls_context() -> ssl.SSLContext:
     ctx.verify_mode = ssl.CERT_REQUIRED
     return ctx
 
-# 初始模擬狀態：使用你前端顯示的身高、體重，其他初值在合理範圍內
+# 初始模擬狀態：配合新版前端欄位
 state = {
     "height": 178.0,
     "weight": 64.0,
-    "pulse": 78,        # 45~120
-    "spo2": 96,         # 84~99
-    "temperature": 36.5,# 35.0~39.0
-    "bp_sys": 106,      # 70~139
-    "bp_dia": 69        # 40~89
+    "heart_rate": 78,         # 45~120
+    "steps": 4200,            # 0~30000
+    "active_minutes": 35,     # 0~300
+    "sleep_hours": 7.2,       # 3~12
+    "sleep_quality": 82,      # 0~100
+    "sedentary_time": 180,    # 0~900
+    "calories": 1680,         # 800~4000
+    "spo2": 97,               # 84~99
+    "hrv": 48                 # 10~120
 }
 
 def clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
 def make_payload() -> dict:
-    """根據 state 產生 payload（並更新 state），遵守你指定的變動規則。"""
-    # 依規則微幅變動
-    state["pulse"] = int(clamp(state["pulse"] + random.randint(-6, 6), 45, 120))
-    state["spo2"]  = int(clamp(state["spo2"]  + random.randint(-2, 2), 84, 99))
-    # temperature +/-0.5，保留一位小數
-    t = state["temperature"] + (random.random() - 0.5)
-    t = round(clamp(round(t*10)/10.0, 35.0, 39.0), 1)
-    state["temperature"] = t
-    state["bp_sys"] = int(clamp(state["bp_sys"] + random.randint(-10, 10), 70, 139))
-    state["bp_dia"] = int(clamp(state["bp_dia"] + random.randint(-3, 3), 40, 89))
+    """根據 state 產生新版健康監測 payload。"""
+
+    # 新版數據微幅變動
+    state["heart_rate"] = int(clamp(state["heart_rate"] + random.randint(-5, 5), 45, 120))
+    state["steps"] = int(clamp(state["steps"] + random.randint(20, 180), 0, 30000))
+    state["active_minutes"] = int(clamp(state["active_minutes"] + random.randint(0, 3), 0, 300))
+    state["sleep_hours"] = round(clamp(state["sleep_hours"] + random.uniform(-0.1, 0.1), 3.0, 12.0), 1)
+    state["sleep_quality"] = int(clamp(state["sleep_quality"] + random.randint(-3, 3), 0, 100))
+    state["sedentary_time"] = int(clamp(state["sedentary_time"] + random.randint(1, 10), 0, 900))
+    state["calories"] = int(clamp(state["calories"] + random.randint(5, 20), 800, 4000))
+    state["spo2"] = int(clamp(state["spo2"] + random.randint(-1, 1), 84, 99))
+    state["hrv"] = int(clamp(state["hrv"] + random.randint(-3, 3), 10, 120))
 
     height = state["height"]
     weight = state["weight"]
@@ -66,20 +72,22 @@ def make_payload() -> dict:
         "device_id": CID,
         "userno": USERNO,
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        # 身高體重固定（若要模擬變化可改 state）
+
+        # 基本身體資料
         "height": round(height, 1),
         "weight": round(weight, 1),
         "bmi": bmi,
-        # 同時放兩組血壓欄位（舊名與新名都放，前端會抓 bp_sys/bp_dia）
-        "blood_pressure_systolic": state["bp_sys"],
-        "blood_pressure_diastolic": state["bp_dia"],
-        "bp_sys": state["bp_sys"],
-        "bp_dia": state["bp_dia"],
-        # 脈搏/體溫/血氧
-        "pulse": state["pulse"],
-        "temperature": state["temperature"],
-        "temp_c": state["temperature"],  # 另放一組可能被前端檢查的 key
-        "spo2": state["spo2"]
+
+        # 新版監測欄位
+        "heart_rate": state["heart_rate"],
+        "steps": state["steps"],
+        "active_minutes": state["active_minutes"],
+        "sleep_hours": state["sleep_hours"],
+        "sleep_quality": state["sleep_quality"],
+        "sedentary_time": state["sedentary_time"],
+        "calories": state["calories"],
+        "spo2": state["spo2"],
+        "hrv": state["hrv"]
     }
     return payload
 
@@ -98,11 +106,9 @@ async def publisher():
             print(f"Connected to MQTT broker {HOST}:{PORT} as {CID}")
             while True:
                 payload = make_payload()
-                text = json.dumps(payload, ensure_ascii=False)  # 將字典轉成 JSON 字串
+                text = json.dumps(payload, ensure_ascii=False)
                 print("📤 Publish ->", text)
-                # publish with QoS 1
                 await client.publish(TOPIC, text, qos=1, retain=False)
-                # 每 3 秒發一次（前端 / mock 皆以 3 秒更新）
                 await asyncio.sleep(3)
 
     except MqttError as e:
