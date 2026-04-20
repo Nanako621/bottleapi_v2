@@ -2,7 +2,7 @@
 # 保留你的設計：1) aiomqtt 在 background asyncio loop 訂閱  2) gevent + Bottle 提供 WebSocket  3) queue 作橋接
 # 新增：mock_publisher 每 3 秒推送與前端相容的指標（當 MQTT 不活躍時仍可看到即時資料）
 
-import sys, ssl, json, asyncio, threading, queue, certifi, time, random
+import sqlite3, sys, ssl, json, asyncio, threading, queue, certifi, time, random
 from bottle import Bottle, request, abort, response, static_file
 from gevent import sleep as gsleep, spawn as gspawn
 from gevent.pywsgi import WSGIServer
@@ -205,66 +205,165 @@ def mock_publisher():
 # 啟動 mock publisher 背景執行緒（daemon）
 threading.Thread(target=mock_publisher, daemon=True).start()
 
-# ---- Bottle + WebSocket ----
+# ---- Bottle 路由設定 (請確保這段在 if __name__ == "__main__" 之前) ----
 app = Bottle()
 
 @app.get("/")
 def index():
-    return static_file('patient_entry.html', root='.')
+    return static_file('iot_intro.html', root='.')
 
-@app.get("/dashboard")
+# --- 新增：處理圖片與字體檔案的路由 ---
+@app.route('/<filename:re:.*\\.(png|jpg|ttf)>')
+def send_static_res(filename):
+    return static_file(filename, root='.')
+
+@app.get("/realmedashboard.html")
 def dashboard():
     return static_file('realmedashboard.html', root='.')
 
-@app.get("/edit_info")
-def edit_info():
+@app.get("/patient_entry.html")
+def patient_entry_page():
     return static_file('patient_entry.html', root='.')
 
-# 若你有 /static 目錄，下面可以提供靜態資源：
-@app.route('/static/<filepath:path>')
-def server_static(filepath):
-    return static_file(filepath, root='./static')
-
-# WebSocket endpoint (與前端相同路徑：/ws)
-@app.route("/ws")
-def ws():
-    wsock = request.environ.get("wsgi.websocket")
-    if not wsock:
-        abort(400, "Expected WebSocket")
-
-    sockets.add(wsock)
-    logging.info(f"[ws] client connected: {id(wsock)} (total {len(sockets)})")
+# 登入驗證 API
+@app.post('/api/login')
+def do_login():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+    
     try:
-        while True:
-            # non-blocking receive — we only keep the socket alive
-            msg = wsock.receive()
-            if msg is None:
-                logging.info(f"[ws] client {id(wsock)} closed connection.")
-                break
-            logging.debug(f"[ws] received from client {id(wsock)}: {msg}")
-    except WebSocketError as e:
-        logging.warning(f"[ws] WebSocketError for {id(wsock)}: {e}")
+        conn = sqlite3.connect('iot_platform.db')
+        cur = conn.cursor()
+        # 查詢是否有匹配的帳號密碼
+        cur.execute("SELECT * FROM users WHERE email=? AND password=?", (email, password))
+        user = cur.fetchone()
+        
+        if user:
+            return {"status": "success", "message": "登入成功"}
+        else:
+            response.status = 401
+            return {"status": "error", "message": "帳號或密碼錯誤"}
     except Exception as e:
-        logging.exception(f"[ws] Exception for {id(wsock)}: {e}")
+        response.status = 500
+        return {"status": "error", "message": str(e)}
     finally:
-        sockets.discard(wsock)
-        logging.info(f"[ws] client removed: {id(wsock)} (total {len(sockets)})")
+        conn.close()
 
-# 新增一個 API：當使用者按下右上按鈕會 POST 到這裡
-@app.post("/api/action")
-def api_action():
+
+# 註冊帳號 API
+@app.post('/api/register')
+def do_register():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+    
     try:
-        payload = request.json
-        if payload is None:
-            payload = json.loads(request.body.read() or "{}")
-    except Exception:
-        payload = {}
-    action = payload.get("action", "unknown")
-    ts = time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{ts}] Action received:", action, "payload:", payload)
-    response.content_type = "application/json"
-    return {"status":"ok","action":action,"received_at":ts}
+        conn = sqlite3.connect('iot_platform.db')
+        cur = conn.cursor()
+        cur.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
+        conn.commit()
+        return {"status": "success", "message": "註冊成功"}
+    except sqlite3.IntegrityError:
+        # 當 email 重複時，會跳到這裡
+        response.status = 400
+        return {"status": "error", "message": "此 Email 已被註冊"}
+    finally:
+        conn.close()
 
+# 登錄/更新 病人資料 API (記憶出生年月日版本)
+@app.post('/api/patient_entry')
+def add_patient():
+    data = request.json
+    email = data.get('email')  # 使用 email 作為主鍵
+    
+    if not email:
+        response.status = 400
+        return {"status": "error", "message": "缺少 Email 資訊"}
+
+    try:
+        conn = sqlite3.connect('iot_platform.db')
+        cur = conn.cursor()
+        
+        # 檢查該 Email 是否已經存在於 patients 表格中
+        cur.execute("SELECT email FROM patients WHERE email=?", (email,))
+        exists = cur.fetchone()
+        
+        if exists:
+            # 如果資料已存在，就更新 (UPDATE)
+            # 欄位調整為：birth_year, birth_month, birth_day
+            cur.execute("""
+                UPDATE patients 
+                SET name=?, birth_year=?, birth_month=?, birth_day=?, gender=?, height=?, weight=?
+                WHERE email=?
+            """, (
+                data['name'], 
+                data['birth_year'], 
+                data['birth_month'], 
+                data['birth_day'], 
+                data['gender'], 
+                data['height'], 
+                data['weight'], 
+                email
+            ))
+        else:
+            # 如果不存在，就新增 (INSERT)
+            cur.execute("""
+                INSERT INTO patients (email, name, birth_year, birth_month, birth_day, gender, height, weight) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                email, 
+                data['name'], 
+                data['birth_year'], 
+                data['birth_month'], 
+                data['birth_day'], 
+                data['gender'], 
+                data['height'], 
+                data['weight']
+            ))
+            
+        conn.commit()
+        return {"status": "success", "message": "資料已同步至雲端（已記錄出生年月日）"}
+    except Exception as e:
+        print(f"Database Error: {e}")
+        response.status = 500
+        return {"status": "error", "message": f"資料庫寫入失敗: {str(e)}"}
+    finally:
+        conn.close()
+# 獲取個人資料 API (供進入頁面時顯示舊資料)
+@app.get('/api/get_patient/<email>')
+def get_patient(email):
+    try:
+        conn = sqlite3.connect('iot_platform.db')
+        cur = conn.cursor()
+        # 查詢所有我們需要的欄位
+        cur.execute("""
+            SELECT name, birth_year, birth_month, birth_day, gender, height, weight 
+            FROM patients WHERE email=?
+        """, (email,))
+        row = cur.fetchone()
+        
+        if row:
+            return {
+                "status": "success", 
+                "data": {
+                    "name": row[0],
+                    "birth_year": row[1],
+                    "birth_month": row[2],
+                    "birth_day": row[3],
+                    "gender": row[4],
+                    "height": row[5],
+                    "weight": row[6]
+                }
+            }
+        else:
+            return {"status": "empty", "message": "尚無歷史資料"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    finally:
+        conn.close()
+        
+                
 if __name__ == "__main__":
     print("啟動 Web Server (0.0.0.0:8080)...")
     server = WSGIServer(("0.0.0.0", 8080), app, handler_class=WebSocketHandler)
@@ -272,3 +371,5 @@ if __name__ == "__main__":
         server.serve_forever()
     except KeyboardInterrupt:
         print("Shutting down...")
+        
+        

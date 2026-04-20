@@ -238,66 +238,151 @@
   </a>
 
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const yearSelect = document.getElementById("birth_year");
-      const monthSelect = document.getElementById("birth_month");
-      const daySelect = document.getElementById("birth_day");
-      const heightSelect = document.getElementById("height");
-      const weightSelect = document.getElementById("weight");
+ window.addEventListener("DOMContentLoaded", async () => {
+    const yearSelect = document.getElementById("birth_year");
+    const monthSelect = document.getElementById("birth_month");
+    const daySelect = document.getElementById("birth_day");
+    const heightSelect = document.getElementById("height");
+    const weightSelect = document.getElementById("weight");
 
-      const currentYear = new Date().getFullYear();
-      for (let y = currentYear; y >= 1920; y--) {
-        let opt = new Option(y + " 年", y);
-        if (y === 2005) opt.selected = true; // 加入這行：如果是 2005 就設為選取狀態
-        yearSelect.add(opt);
-      }
-      for (let m = 1; m <= 12; m++) monthSelect.add(new Option(m + " 月", m.toString().padStart(2, '0')));
-      for (let d = 1; d <= 31; d++) daySelect.add(new Option(d + " 日", d.toString().padStart(2, '0')));
-
-      for (let h = 50; h <= 250; h++) {
-        let opt = new Option(h, h);
-        if (h === 170) opt.selected = true;
-        heightSelect.add(opt);
-      }
-      for (let w = 20; w <= 200; w++) {
-        let opt = new Option(w, w);
-        if (w === 60) opt.selected = true;
-        weightSelect.add(opt);
-      }
-
-      const mode = localStorage.getItem("edit_mode");
-      if (mode === "info" || mode === "height_weight") {
-        document.getElementById("name").value = localStorage.getItem("patient_name") || "";
-        document.getElementById("gender").value = localStorage.getItem("patient_gender") || "男";
-        const oldBirth = localStorage.getItem("patient_birth");
-        if (oldBirth) {
-          const p = oldBirth.split("-");
-          yearSelect.value = p[0]; monthSelect.value = p[1]; daySelect.value = p[2];
-        }
-        const data = JSON.parse(localStorage.getItem("patient_data") || "{}");
-        if (data.height) heightSelect.value = data.height;
-        if (data.weight) weightSelect.value = data.weight;
-      }
-    });
-
-    function saveAll() {
-      const name = document.getElementById('name').value.trim();
-      if(!name) { alert("請輸入姓名"); return; }
-      
-      const fullBirth = `${document.getElementById('birth_year').value}-${document.getElementById('birth_month').value}-${document.getElementById('birth_day').value}`;
-      
-      localStorage.setItem("patient_name", name);
-      localStorage.setItem("patient_gender", document.getElementById('gender').value);
-      localStorage.setItem("patient_birth", fullBirth);
-      
-      const data = JSON.parse(localStorage.getItem("patient_data") || "{}");
-      data.height = Number(document.getElementById('height').value);
-      data.weight = Number(document.getElementById('weight').value);
-      localStorage.setItem("patient_data", JSON.stringify(data));
-
-      localStorage.removeItem("edit_mode");
-      window.location.href = "realmedashboard.html";
+    // --- 1. 先強制生成所有選單選項 (確保這部分一定會執行) ---
+    const currentYear = new Date().getFullYear();
+    
+    // 生成年份 (1920 - 今年)
+    yearSelect.innerHTML = '<option value="">請選擇</option>';
+    for (let y = currentYear; y >= 1920; y--) {
+        yearSelect.add(new Option(y + " 年", y));
     }
+
+    // 生成月份 (01-12)
+    monthSelect.innerHTML = '<option value="">請選擇</option>';
+    for (let m = 1; m <= 12; m++) {
+        const val = m.toString().padStart(2, '0');
+        monthSelect.add(new Option(m + " 月", val));
+    }
+
+    // 生成日期 (01-31)
+    daySelect.innerHTML = '<option value="">請選擇</option>';
+    for (let d = 1; d <= 31; d++) {
+        const val = d.toString().padStart(2, '0');
+        daySelect.add(new Option(d + " 日", val));
+    }
+
+    // 生成身高 (50-250)
+    heightSelect.innerHTML = '<option value="">請選擇</option>';
+    for (let h = 50; h <= 250; h++) {
+        heightSelect.add(new Option(h + " cm", h));
+    }
+
+    // 生成體重 (20-200)
+    weightSelect.innerHTML = '<option value="">請選擇</option>';
+    for (let w = 20; w <= 200; w++) {
+        weightSelect.add(new Option(w + " kg", w));
+    }
+
+    // --- 2. 選單生成完畢後，再從資料庫抓資料填入 ---
+    const email = localStorage.getItem("user_email");
+    if (email) {
+        try {
+            const response = await fetch(`/api/get_patient/${email}`);
+            const res = await response.json();
+            
+            if (res.status === "success") {
+                // 填入文字
+                document.getElementById("name").value = res.data.name || "";
+                document.getElementById("gender").value = res.data.gender || "男";
+                
+                // 填入選單數值 (這時選項已經存在，所以可以正確選取)
+                if (res.data.birth_year) yearSelect.value = res.data.birth_year;
+                if (res.data.birth_month) monthSelect.value = res.data.birth_month.toString().padStart(2, '0');
+                if (res.data.birth_day) daySelect.value = res.data.birth_day.toString().padStart(2, '0');
+                
+                if (res.data.height) heightSelect.value = Math.round(res.data.height);
+                if (res.data.weight) weightSelect.value = Math.round(res.data.weight);
+                
+                console.log("資料庫資料載入成功");
+            }
+        } catch (err) {
+            console.error("載入雲端資料出錯:", err);
+        }
+    }
+});
+  async function saveAll() {
+  // 1. 取得目前登入者的 Email (必須從 localStorage 取得)
+  const email = localStorage.getItem("user_email"); 
+  const name = document.getElementById('name').value.trim();
+  
+  // 安全檢查：如果沒登入就踢回首頁
+  if (!email) { 
+    alert("偵測不到登入資訊，請重新登入"); 
+    window.location.href = 'iot_intro.html';
+    return; 
+  }
+  
+  if (!name) { 
+    alert("請輸入姓名"); 
+    return; 
+  }
+  
+  // 2. 收集表單數據
+  const gender = document.getElementById('gender').value;
+  const height = document.getElementById('height').value;
+  const weight = document.getElementById('weight').value;
+  
+  // 取得出生年月日數值
+  const bYear = parseInt(document.getElementById('birth_year').value);
+  const bMonth = parseInt(document.getElementById('birth_month').value);
+  const bDay = parseInt(document.getElementById('birth_day').value);
+  const fullBirth = `${bYear}-${document.getElementById('birth_month').value}-${document.getElementById('birth_day').value}`;
+
+  // --- 3. 同步到 localStorage (確保即時儀表板能讀到資料) ---
+  localStorage.setItem("patient_name", name);
+  localStorage.setItem("patient_gender", gender);
+  localStorage.setItem("patient_birth", fullBirth);
+  
+  const localData = JSON.parse(localStorage.getItem("patient_data") || "{}");
+  localData.height = Number(height);
+  localData.weight = Number(weight);
+  localStorage.setItem("patient_data", JSON.stringify(localData));
+
+  // --- 4. 準備 API Payload (對應更新後的資料庫欄位) ---
+  const payload = {
+    email: email,      // 主鍵
+    name: name,
+    birth_year: bYear,
+    birth_month: bMonth,
+    birth_day: bDay,
+    gender: gender,
+    height: Number(height),
+    weight: Number(weight)
+  };
+
+  // --- 5. 透過 Fetch API 傳送到 Python 後端 ---
+  try {
+    const response = await fetch('/api/patient_entry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await response.json();
+
+    if (response.ok) {
+      alert('資料儲存成功！已同步至雲端資料庫（記錄出生年月日）。');
+      localStorage.removeItem("edit_mode");
+      window.location.href = 'realmedashboard.html';
+    } else {
+      alert('同步失敗：' + (result.message || '未知錯誤'));
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+    alert('無法連接到伺服器，已先將資料暫存於瀏覽器。');
+    window.location.href = 'realmedashboard.html';
+  }
+}
   </script>
 </body>
 </html>
+
+
+ 

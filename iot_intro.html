@@ -5,408 +5,254 @@
   <title>大學生健康 IoT 平台</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-
-@font-face {
-  font-family: 'ProperScript';
-  src: url('ProperScript-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-
-html, body, *{
-  font-family: 'ProperScript', "PingFang TC", "Microsoft JhengHei", sans-serif;
-}
-
-
-    :root{
-      --primary:#2db7d3;
-      --primary-dark:#1d8fa8;
-      --text:#1f2937;
-      --muted:#6b7280;
-      --white:#ffffff;
-      --border:#e5e7eb;
-      --shadow:0 10px 30px rgba(15,23,42,0.12);
+    @font-face {
+      font-family: 'ProperScript';
+      src: url('ProperScript-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
     }
 
-    *{
-      box-sizing:border-box;
+    html, body, * {
+      font-family: 'ProperScript', "PingFang TC", "Microsoft JhengHei", sans-serif;
     }
 
-    html,body{
-      margin:0;
-      padding:0;
-      font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Segoe UI",Roboto,sans-serif;
-      color:var(--text);
-      background:#f8fafc;
+    :root {
+      --primary: #2db7d3;
+      --primary-dark: #1d8fa8;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --white: #ffffff;
+      --border: #e5e7eb;
+      --shadow: 0 10px 30px rgba(15,23,42,0.12);
     }
 
-    a{
-      text-decoration:none;
-      color:inherit;
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0;
+      color: var(--text);
+      background: #f8fafc;
+      scroll-behavior: smooth;
     }
+
+    a { text-decoration: none; color: inherit; }
 
     /* ===== Navbar ===== */
-    .navbar{
-      position:fixed;
-      top:0;
-      left:0;
-      right:0;
-      z-index:100;
-      height:88px;
-      background:rgba(255,255,255,0.96);
-      backdrop-filter:blur(8px);
-      border-bottom:1px solid rgba(0,0,0,0.08);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:0 48px;
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100; height: 88px;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px;
     }
 
-    .brand{
-      font-size:24px;
-      font-weight:500;
-      color:#374151;
-      letter-spacing:0.02em;
-    }
+    .brand { font-size: 24px; font-weight: 500; color: #374151; letter-spacing: 0.02em; }
 
-    .nav-links{
-      display:flex;
-      align-items:center;
-      gap:34px;
-      font-size:16px;
-      color:#6b7280;
-    }
+    .nav-links { display: flex; align-items: center; gap: 34px; font-size: 16px; color: #6b7280; }
+    .nav-links a:hover, .nav-links a.active { color: var(--primary); font-weight: 600; }
 
-    .nav-links a.active{
-      color:var(--primary);
-      font-weight:600;
-    }
-
-    .nav-gear{
-      width:44px;
-      height:44px;
-      border:1px solid #d1d5db;
-      border-radius:6px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:#9ca3af;
-      font-size:20px;
+    .nav-gear {
+      width: 44px; height: 44px; border: 1px solid #d1d5db; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: #9ca3af; font-size: 20px;
     }
 
     /* ===== Hero ===== */
-    .hero{
-      position:relative;
-      min-height:740px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      padding:140px 24px 80px;
-      overflow:hidden;
-      background:
-        linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)),
-         url("health-bg.png") center center / cover no-repeat;
-
+    .hero {
+      position: relative; min-height: 740px;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 140px 24px 80px;
+      background: linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)), url("health-bg.png") center center / cover no-repeat;
     }
 
-    .hero-content{
-      max-width:980px;
-      color:#2db7d3;
+    .hero-title {
+      font-size: 72px; font-weight: 500; line-height: 1.2; margin-bottom: 28px; color: #2db7d3;
+      text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0 4px 20px rgba(0,0,0,0.2);
     }
 
+    .hero-desc { font-size: 18px; line-height: 2; color: #4b5563; max-width: 800px; margin: 0 auto 42px; }
 
-    .hero-title{
-      font-size:72px;
-      font-weight:500;
-      line-height:1.2;
-      margin:0 0 28px;
-      letter-spacing:0.03em;
-      text-shadow:0 4px 20px rgba(0,0,0,0.28);
+    .hero-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 320px; padding: 20px 32px; background: var(--primary);
+      color: #fff; border: none; border-radius: 999px; font-size: 22px; font-weight: 700;
+      cursor: pointer; box-shadow: var(--shadow); transition: all .2s ease;
+    }
+    .hero-btn:hover { background: var(--primary-dark); transform: translateY(-2px); }
 
-      /* 🔥 白色外框（重點） */
-  text-shadow:
-    -2px -2px 0 #ffffff,
-     2px -2px 0 #ffffff,
-    -2px  2px 0 #ffffff,
-     2px  2px 0 #ffffff;
-
+    /* ===== Modal ===== */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      z-index: 1000; display: none; align-items: center; justify-content: center;
     }
 
-    .hero-desc{
-      font-size:18px;
-      line-height:2;
-      color:rgba(255,255,255,0.92);
-      max-width:980px;
-      margin:0 auto 42px;
-      text-shadow:0 2px 10px rgba(0,0,0,0.2);
+    .modal-content {
+      background: white; padding: 40px; border-radius: 24px;
+      width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
     }
 
-    .hero-btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:360px;
-      padding:20px 32px;
-      background:var(--primary);
-      color:#fff;
-      border:none;
-      border-radius:999px;
-      font-size:24px;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 12px 30px rgba(45,183,211,0.35);
-      transition:transform .2s ease, background .2s ease, box-shadow .2s ease;
+    .modal-content input {
+      width: 100%; padding: 14px; margin-bottom: 12px;
+      border: 1px solid #e5e7eb; border-radius: 12px; font-size: 16px;
     }
 
-    .hero-btn:hover{
-      background:var(--primary-dark);
-      transform:translateY(-2px);
-      box-shadow:0 16px 34px rgba(45,183,211,0.42);
+    /* ===== Features & Sections ===== */
+    .section { padding: 80px 24px; background: #fff; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 40px; }
+    .feature-card { padding: 30px; border: 1px solid #eee; border-radius: 20px; box-shadow: var(--shadow); }
+
+    .ai-assistant {
+      position: fixed; right: 30px; bottom: 30px; z-index: 120;
+      background: linear-gradient(135deg,#f5ecff,#efe7ff); color: #7c3aed;
+      border: 1px solid #e9d5ff; border-radius: 999px; padding: 15px 25px;
+      font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
 
-    /* ===== Floating AI button ===== */
-    .ai-assistant{
-      position:fixed;
-      right:34px;
-      bottom:28px;
-      z-index:120;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      background:linear-gradient(135deg,#f5ecff,#efe7ff);
-      color:#7c3aed;
-      border:1px solid #e9d5ff;
-      border-radius:999px;
-      padding:18px 24px;
-      box-shadow:0 10px 24px rgba(124,58,237,0.15);
-      font-size:18px;
-      font-weight:700;
-      cursor:pointer;
-    }
-
-    .ai-assistant span{
-      font-size:22px;
-    }
-
-    /* ===== Section ===== */
-    .section{
-      background:#fff;
-      padding:72px 24px;
-    }
-
-    .section-inner{
-      max-width:1200px;
-      margin:0 auto;
-    }
-
-    .section-title{
-      font-size:36px;
-      font-weight:800;
-      text-align:center;
-      margin:0 0 16px;
-      color:#0f172a;
-    }
-
-    .section-desc{
-      text-align:center;
-      font-size:18px;
-      color:var(--muted);
-      max-width:860px;
-      line-height:1.9;
-      margin:0 auto 42px;
-    }
-
-    .feature-grid{
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0,1fr));
-      gap:24px;
-    }
-
-    .feature-card{
-      background:#ffffff;
-      border:1px solid #e5e7eb;
-      border-radius:24px;
-      padding:28px 24px;
-      box-shadow:var(--shadow);
-    }
-
-    .feature-icon{
-      width:60px;
-      height:60px;
-      border-radius:18px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:28px;
-      background:#ecfeff;
-      color:#0891b2;
-      margin-bottom:18px;
-    }
-
-    .feature-card h3{
-      margin:0 0 12px;
-      font-size:22px;
-      color:#111827;
-    }
-
-    .feature-card p{
-      margin:0;
-      font-size:16px;
-      line-height:1.9;
-      color:#6b7280;
-    }
-
-    .highlight{
-      color:var(--primary);
-      font-weight:700;
-    }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 1024px){
-      .hero-title{
-        font-size:56px;
-      }
-
-      .feature-grid{
-        grid-template-columns:1fr;
-      }
-    }
-
-    @media (max-width: 768px){
-      .navbar{
-        height:auto;
-        padding:18px 20px;
-        flex-wrap:wrap;
-        gap:14px;
-      }
-
-      .brand{
-        font-size:22px;
-      }
-
-      .nav-links{
-        gap:18px;
-        font-size:15px;
-      }
-
-      .hero{
-        min-height:680px;
-        padding-top:150px;
-      }
-
-      .hero-title{
-        font-size:40px;
-      }
-
-      .hero-desc{
-        font-size:16px;
-        line-height:1.8;
-      }
-
-      .hero-btn{
-        min-width:auto;
-        width:100%;
-        max-width:340px;
-        font-size:20px;
-        padding:18px 24px;
-      }
-
-      .ai-assistant{
-        right:18px;
-        bottom:18px;
-        padding:14px 18px;
-        font-size:16px;
-      }
-    }
+    .close-btn { margin-top: 15px; background: none; border: none; color: #9ca3af; cursor: pointer; }
   </style>
 </head>
 <body>
 
   <header class="navbar">
     <div class="brand">大學生健康IoT平台</div>
-
     <nav class="nav-links">
       <a href="#" class="active">首頁</a>
       <a href="#services">服務</a>
       <a href="#contact">聯絡</a>
-       <div class="nav-gear"> ◡̈ </div> 
+      <a href="javascript:void(0)" onclick="openModal('loginModal')">登入</a>
+      <div class="nav-gear"> ◡̈ </div> 
     </nav>
   </header>
 
   <section class="hero">
     <div class="hero-content">
       <h1 class="hero-title">連結健康，改善生活。</h1>
-      <p class="hero-desc">
-        我們提供專業的大學生健康物聯網智慧監測服務，結合穿戴式裝置、即時資料傳輸與健康儀表板分析，
-        協助學生掌握心率、睡眠、血氧、體溫與生活作息變化，提升自我健康管理效率，
-        建立更規律、更有品質的校園生活。
-      </p>
-      <button class="hero-btn" onclick="location.href='patient_entry.html'">
-        開始使用智慧監測系統
-      </button>
+      <p class="hero-desc">專業的物聯網監測服務，結合穿戴式裝置與健康儀表板，協助大學生掌握作息變化。</p>
+      <button class="hero-btn" onclick="openModal('loginModal')">開始使用智慧監測系統</button>
     </div>
   </section>
 
   <section class="section" id="services">
     <div class="section-inner">
-      <h2 class="section-title">平台核心服務</h2>
-      <p class="section-desc">
-        從即時監測到健康分析，平台以<span class="highlight">大學生日常需求</span>為核心，
-        讓健康管理不再只是醫療情境，而是融入課業、作息、壓力與生活習慣的智慧工具。
-      </p>
-
+      <h2 style="text-align:center; font-size:32px;">平台核心服務</h2>
       <div class="feature-grid">
-        <div class="feature-card">
-          <div class="feature-icon">⌚</div>
-          <h3>即時健康監測</h3>
-          <p>
-            串接穿戴式裝置與 IoT 感測資料，即時掌握心率、血氧、體溫與睡眠狀況，
-            幫助學生快速了解當下身體狀態。
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>健康趨勢分析</h3>
-          <p>
-            透過視覺化圖表呈現每日與近期變化，觀察熬夜、考試壓力、運動習慣
-            與身體數值之間的關聯。
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">🤖</div>
-          <h3>智慧提醒與建議</h3>
-          <p>
-            結合系統規則與後續 AI 分析能力，主動提供睡眠不足、壓力偏高、
-            生活作息異常等提醒與調整建議。
-          </p>
-        </div>
+        <div class="feature-card"><h3>⌚ 即時健康監測</h3><p>串接感測資料，掌握心率與睡眠狀況。</p></div>
+        <div class="feature-card"><h3>📊 健康趨勢分析</h3><p>圖表呈現每日變化，觀察生活習慣關聯。</p></div>
+        <div class="feature-card"><h3>🤖 智慧提醒建議</h3><p>主動提供作息異常提醒與 AI 調整建議。</p></div>
       </div>
     </div>
   </section>
-  </section>
 
-  <!-- 🔥 聯絡區塊（這裡是正確位置） -->
-  <section id="contact" style="padding:80px 20px; text-align:center; background:#fff;">
-    <h2 style="font-size:28px; margin-bottom:10px;">聯絡我們</h2>
-    <p style="color:#6b7280;">有任何問題或建議，歡迎留下訊息</p>
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>會員登入</h3>
+      <form onsubmit="handleLogin(event)">
+        <input type="email" id="loginEmail" placeholder="Email" required>
+        <input type="password" id="loginPassword" placeholder="密碼" required>
+        <button type="submit" class="hero-btn" style="min-width:100%; margin-top:10px;">登入</button>
+      </form>
+      <p style="margin-top:15px; font-size:14px;">
+        還沒有帳號？ <a href="javascript:void(0)" onclick="switchModal('loginModal', 'registerModal')" style="color:#2db7d3; font-weight:700;">立即註冊</a>
+      </p>
+      <button onclick="closeModal('loginModal')" class="close-btn">關閉視窗</button>
+    </div>
+  </div>
 
-    <form style="max-width:400px; margin:20px auto;">
-      <input type="text" placeholder="你的姓名" style="width:100%; padding:10px; margin-bottom:10px;"><br>
-      <input type="email" placeholder="你的Email" style="width:100%; padding:10px; margin-bottom:10px;"><br>
-      <textarea placeholder="想說的話..." style="width:100%; padding:10px;"></textarea><br><br>
-      <button type="submit" style="padding:10px 20px; border-radius:999px; background:#2db7d3; color:#fff; border:none;">
-        送出
-      </button>
-    </form>
-  </section>
+  <div id="registerModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>加入我們</h3>
+      <form onsubmit="handleRegister(event)">
+        <input type="email" id="regEmail" placeholder="Email" required>
+        <input type="password" id="regPassword" placeholder="設定密碼 (至少6位英數)" required>
+        <input type="password" id="confirmPassword" placeholder="確認密碼" required>
+        <button type="submit" class="hero-btn" style="min-width:100%; margin-top:10px;">完成註冊</button>
+      </form>
+      <p style="margin-top:15px; font-size:14px;">
+        已有帳號？ <a href="javascript:void(0)" onclick="switchModal('registerModal', 'loginModal')" style="color:#2db7d3; font-weight:700;">返回登入</a>
+      </p>
+      <button onclick="closeModal('registerModal')" class="close-btn">關閉視窗</button>
+    </div>
+  </div>
 
+  <button class="ai-assistant" onclick="location.href='realmedashboard.html'"><span>✦</span> AI 助理</button>
+
+  <script>
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function switchModal(closeId, openId) { closeModal(closeId); openModal(openId); }
+
+  async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      // 【關鍵修改】將 email 存入 localStorage，讓下一頁 patient_entry.html 能夠抓到是誰在登入
+      localStorage.setItem("user_email", email); 
+      
+      alert('登入成功！請先填寫/確認您的基本健康資料，以便我們提供更精準的分析與建議。');
+      
+      // 跳轉至基本資料填寫頁面
+      window.location.href = 'patient_entry.html'; 
+    } else {
+      // 顯示後端回傳的錯誤訊息（例如：帳號或密碼錯誤）
+      alert('登入失敗：' + (result.message || '請檢查帳號密碼'));
+    }
+  } 
+  catch (error) {
+    console.error('Login Error:', error);
+    alert('無法連接到伺服器，請確保 Python 程式正在運行。');
+  }
+}
   
-  <button class="ai-assistant" type="button" onclick="location.href='realmedashboard.html'">
-    <span>✦</span> AI 助理
-  </button>
 
+    async function handleRegister(e) {
+      e.preventDefault();
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      
+      const passwordRule = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+
+      if (!passwordRule.test(password)) {
+        alert('密碼格式不正確：請輸入至少 6 位字元，並包含英文字母與數字。');
+        return;
+      }
+      if (password !== confirmPassword) {
+        alert('密碼與確認密碼不符！');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password })
+        });
+        const result = await response.json();
+        if (response.ok) {
+          alert('註冊成功！資料已寫入資料庫');
+          switchModal('registerModal', 'loginModal'); 
+        } else {
+          alert('註冊失敗：' + result.message);
+        }
+      } catch (error) {
+        alert('無法連接到伺服器，請確保 Python 程式正在運行。');
+      }
+    }
+  </script>
 </body>
 </html>
