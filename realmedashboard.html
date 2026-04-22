@@ -712,7 +712,7 @@
             </div>
           </div>
           <div class="value-row"><div class="value" id="sedentary_time">--</div></div>
-          <div class="meta">久坐時間過長可能增加代謝與肌肉骨骼負擔。</div>
+          <div class="meta">顯示目前這一段連續久坐時間，起身活動後會重新計算。</div>
           <button class="edu-btn" data-topic="sedentary_time">衛教</button>
         </div>
 
@@ -796,7 +796,7 @@ function pushBuffer(key, value){
 
   document.getElementById("patient-info-name").innerText = name;
   document.getElementById("patient-info-detail").innerText =
-    `性別：${gender} ｜ 出生：${birth || "未填寫"} ｜ 身分證：${idno || "未填寫"}`;
+  `性別：${gender} ｜ 出生：${birth || "未填寫"}`;
 })();
 document.getElementById("edit-info-btn").addEventListener("click", () => {
   localStorage.setItem("edit_mode", "info");
@@ -976,10 +976,10 @@ function renderValues(){
   }
 
   const sedentaryEl = document.getElementById('sedentary_time');
-  if (state.sedentary_time != null){
-    sedentaryEl.innerText = Math.round(state.sedentary_time);
-    sedentaryEl.className = (state.sedentary_time > 480) ? 'abnormal' : '';
-  }
+if (state.sedentary_time != null){
+  sedentaryEl.innerText = Math.round(state.sedentary_time);
+  sedentaryEl.className = (state.sedentary_time >= 60) ? 'abnormal' : '';
+}
 
   const caloriesEl = document.getElementById('calories');
   if (state.calories != null){
@@ -1176,17 +1176,36 @@ function onNewMeasurement(payload){
 function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 function randFloat(min,max){ return Math.random()*(max-min)+min; }
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+let localSedentaryStart = Date.now();
 
 function localMockStep(){
-  state.heart_rate     = clamp((state.heart_rate || 78) + randInt(-5,5), 45, 120);
-  state.steps          = clamp((state.steps || 4200) + randInt(20,180), 0, 30000);
-  state.active_minutes = clamp((state.active_minutes || 35) + randInt(0,3), 0, 300);
-  state.sleep_hours    = Math.round(clamp((state.sleep_hours || 7.2) + randFloat(-0.1,0.1), 3, 12) * 10) / 10;
-  state.sleep_quality  = clamp((state.sleep_quality || 82) + randInt(-3,3), 0, 100);
-  state.sedentary_time = clamp((state.sedentary_time || 180) + randInt(1,10), 0, 900);
-  state.calories       = clamp((state.calories || 1680) + randInt(5,20), 800, 4000);
-  state.spo2           = clamp((state.spo2 || 97) + randInt(-1,1), 84, 99);
-  state.hrv            = clamp((state.hrv || 48) + randInt(-3,3), 10, 120);
+  state.heart_rate = clamp((state.heart_rate || 78) + randInt(-3,3), 45, 120);
+
+  // 大部分時間坐著
+  const isSedentary = Math.random() < 0.75;
+  let stepAdd = 0;
+
+  if(!isSedentary){
+    stepAdd = randInt(1,5);
+    state.steps = clamp((state.steps || 4200) + stepAdd, 0, 30000);
+    state.sedentary_time = 0;
+    localSedentaryStart = Date.now();
+
+    if(Math.random() < 0.3){
+      state.active_minutes = clamp((state.active_minutes || 35) + 1, 0, 300);
+    }
+  }else{
+    // 坐著時步數不增加
+    const elapsedMin = Math.floor((Date.now() - localSedentaryStart) / 60000);
+    state.sedentary_time = clamp(elapsedMin, 0, 180);
+  }
+
+  if(state.sleep_hours == null) state.sleep_hours = 7.2;
+  if(state.sleep_quality == null) state.sleep_quality = 82;
+
+  state.calories = clamp((state.calories || 1680) + randInt(0,2) + stepAdd, 800, 4000);
+  state.spo2 = clamp((state.spo2 || 97) + randInt(-1,1), 94, 99);
+  state.hrv = clamp((state.hrv || 48) + randInt(-2,2), 10, 120);
 
   pushBuffer('heart_rate', state.heart_rate);
   pushBuffer('steps', state.steps);

@@ -136,17 +136,19 @@ threading.Thread(target=run_mqtt, daemon=True).start()
 # ---- Mock publisher：當 MQTT 不活躍時每 3 秒放入模擬資料 ----
 # 初始模擬狀態（與新版前端相容）
 mock_state = {
-    "heart_rate": 78,       # 45~120
-    "steps": 4200,          # 0~30000
-    "active_minutes": 35,   # 0~300
-    "sleep_hours": 7.2,     # 3.0~12.0
-    "sleep_quality": 82,    # 0~100
-    "sedentary_time": 180,  # 0~900
-    "calories": 1680,       # 800~4000
-    "spo2": 97,             # 84~99
-    "hrv": 48,              # 10~120
+    "heart_rate": 78,
+    "steps": 4200,
+    "active_minutes": 35,
+    "sleep_hours": 7.2,       # 同一天固定
+    "sleep_quality": 82,      # 同一天固定
+    "sedentary_time": 25,     # 單位：分鐘
+    "calories": 1680,
+    "spo2": 97,
+    "hrv": 48,
     "height": 178,
-    "weight": 64
+    "weight": 64,
+    "is_sedentary": True,     # 是否正在久坐
+    "last_sedentary_tick": time.time()  # 上次久坐+1分鐘的時間
 }
 
 def clamp(v, lo, hi):
@@ -158,25 +160,74 @@ def mock_publisher():
         last = get_last_mqtt_ts()
         now = time.time()
 
-        # 如果最近 2 秒內有收到 MQTT，讓 mock 等待 3 秒再發（避免頻繁覆寫）
+        # 最近 2 秒有 MQTT，避免 mock 搶著覆蓋
         if now - last < 2.0:
             time.sleep(3.0)
             continue
 
-        # 按新版欄位規則調整 random 變動
-        mock_state["heart_rate"] = int(clamp(mock_state["heart_rate"] + random.randint(-5, 5), 45, 120))
-        mock_state["steps"] = int(clamp(mock_state["steps"] + random.randint(20, 180), 0, 30000))
-        mock_state["active_minutes"] = int(clamp(mock_state["active_minutes"] + random.randint(0, 3), 0, 300))
-        mock_state["sleep_hours"] = round(clamp(mock_state["sleep_hours"] + random.uniform(-0.1, 0.1), 3.0, 12.0), 1)
-        mock_state["sleep_quality"] = int(clamp(mock_state["sleep_quality"] + random.randint(-3, 3), 0, 100))
-        mock_state["sedentary_time"] = int(clamp(mock_state["sedentary_time"] + random.randint(1, 10), 0, 900))
-        mock_state["calories"] = int(clamp(mock_state["calories"] + random.randint(5, 20), 800, 4000))
-        mock_state["spo2"] = int(clamp(mock_state["spo2"] + random.randint(-1, 1), 84, 99))
-        mock_state["hrv"] = int(clamp(mock_state["hrv"] + random.randint(-3, 3), 10, 120))
+        # 1. 心率：小幅波動
+        mock_state["heart_rate"] = int(clamp(
+            mock_state["heart_rate"] + random.randint(-3, 3), 45, 120
+        ))
+
+        # 2. 隨機判斷現在是否仍在坐著
+        # 大部分時間坐著，偶爾起身走動
+        if random.random() < 0.75:
+            mock_state["is_sedentary"] = True
+        else:
+            mock_state["is_sedentary"] = False
+
+        step_add = 0
+
+        # 3. 步數：只有不在久坐時才增加，而且每次只加 1~5 步
+        if not mock_state["is_sedentary"]:
+            step_add = random.randint(1, 5)
+            mock_state["steps"] = int(clamp(
+                mock_state["steps"] + step_add, 0, 30000
+            ))
+
+            # 有走動就代表久坐中斷，歸零重新算
+            mock_state["sedentary_time"] = 0
+            mock_state["last_sedentary_tick"] = now
+
+            # 運動時間很少量增加
+            if random.random() < 0.3:
+                mock_state["active_minutes"] = int(clamp(
+                    mock_state["active_minutes"] + 1, 0, 300
+                ))
+
+        else:
+            # 4. 久坐時：步數不增加
+            # 真正滿 60 秒才讓久坐時間 +1
+            elapsed = now - mock_state["last_sedentary_tick"]
+            if elapsed >= 60:
+                add_minutes = int(elapsed // 60)
+                mock_state["sedentary_time"] = int(clamp(
+                    mock_state["sedentary_time"] + add_minutes, 0, 180
+                ))
+                mock_state["last_sedentary_tick"] += add_minutes * 60
+
+        # 5. 睡眠資料：同一天固定，不更新
+        # sleep_hours / sleep_quality 維持不動
+
+        # 6. 卡路里：跟活動量微幅增加
+        mock_state["calories"] = int(clamp(
+            mock_state["calories"] + random.randint(0, 2) + step_add,
+            800, 4000
+        ))
+
+        # 7. 血氧：小幅波動
+        mock_state["spo2"] = int(clamp(
+            mock_state["spo2"] + random.randint(-1, 1), 94, 99
+        ))
+
+        # 8. HRV：小幅波動
+        mock_state["hrv"] = int(clamp(
+            mock_state["hrv"] + random.randint(-2, 2), 10, 120
+        ))
 
         payload = {
-            "timestamp": int(time.time()),
-            # 使用與新版前端一致的欄位名稱
+            "timestamp": int(now),
             "heart_rate": mock_state["heart_rate"],
             "steps": mock_state["steps"],
             "active_minutes": mock_state["active_minutes"],
@@ -189,6 +240,7 @@ def mock_publisher():
             "height": mock_state["height"],
             "weight": mock_state["weight"]
         }
+
         obj = {"topic": "mock/data", "payload": payload}
         try:
             inbox.put_nowait(json.dumps(obj, ensure_ascii=False))
@@ -199,7 +251,6 @@ def mock_publisher():
             except Exception:
                 pass
 
-        # 等待 3 秒再產生下一筆
         time.sleep(3.0)
 
 # 啟動 mock publisher 背景執行緒（daemon）

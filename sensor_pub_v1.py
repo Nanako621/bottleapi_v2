@@ -35,15 +35,15 @@ def make_tls_context() -> ssl.SSLContext:
 state = {
     "height": 178.0,
     "weight": 64.0,
-    "heart_rate": 78,         # 45~120
-    "steps": 4200,            # 0~30000
-    "active_minutes": 35,     # 0~300
-    "sleep_hours": 7.2,       # 3~12
-    "sleep_quality": 82,      # 0~100
-    "sedentary_time": 180,    # 0~900
-    "calories": 1680,         # 800~4000
-    "spo2": 97,               # 84~99
-    "hrv": 48                 # 10~120
+    "heart_rate": 78,
+    "steps": 4200,
+    "active_minutes": 35,
+    "sleep_hours": 7.2,
+    "sleep_quality": 82,
+    "sedentary_time": 25,
+    "calories": 1680,
+    "spo2": 97,
+    "hrv": 48,
 }
 
 def clamp(v, lo, hi):
@@ -52,16 +52,40 @@ def clamp(v, lo, hi):
 def make_payload() -> dict:
     """根據 state 產生新版健康監測 payload。"""
 
-    # 新版數據微幅變動
-    state["heart_rate"] = int(clamp(state["heart_rate"] + random.randint(-5, 5), 45, 120))
-    state["steps"] = int(clamp(state["steps"] + random.randint(20, 180), 0, 30000))
-    state["active_minutes"] = int(clamp(state["active_minutes"] + random.randint(0, 3), 0, 300))
-    state["sleep_hours"] = round(clamp(state["sleep_hours"] + random.uniform(-0.1, 0.1), 3.0, 12.0), 1)
-    state["sleep_quality"] = int(clamp(state["sleep_quality"] + random.randint(-3, 3), 0, 100))
-    state["sedentary_time"] = int(clamp(state["sedentary_time"] + random.randint(1, 10), 0, 900))
-    state["calories"] = int(clamp(state["calories"] + random.randint(5, 20), 800, 4000))
-    state["spo2"] = int(clamp(state["spo2"] + random.randint(-1, 1), 84, 99))
-    state["hrv"] = int(clamp(state["hrv"] + random.randint(-3, 3), 10, 120))
+    state["heart_rate"] = int(clamp(state["heart_rate"] + random.randint(-3, 3), 45, 120))
+
+    # 步數：只能增加，有時不變
+    if random.random() < 0.45:
+        step_add = 0
+    else:
+        step_add = random.randint(5, 80)
+    state["steps"] = int(clamp(state["steps"] + step_add, 0, 30000))
+
+    # 運動時間：有活動時才增加
+    if step_add >= 30:
+        state["active_minutes"] = int(clamp(state["active_minutes"] + random.choice([0, 1]), 0, 300))
+
+    # 睡眠資料：同一天固定，不一直變
+    # sleep_hours / sleep_quality 不更新
+
+    # 久坐：有走動就歸零，沒走動才增加
+    if step_add >= 30:
+        state["is_sedentary"] = False
+        state["sedentary_time"] = 0
+    else:
+        if random.random() < 0.75:
+            state["is_sedentary"] = True
+            state["sedentary_time"] = int(clamp(state["sedentary_time"] + random.randint(3, 6), 0, 180))
+        else:
+            state["is_sedentary"] = False
+            state["sedentary_time"] = 0
+
+    # 卡路里慢慢增加
+    state["calories"] = int(clamp(state["calories"] + random.randint(1, 8) + step_add // 25, 800, 4000))
+
+    # 血氧 / HRV 小幅變動
+    state["spo2"] = int(clamp(state["spo2"] + random.randint(-1, 1), 94, 99))
+    state["hrv"] = int(clamp(state["hrv"] + random.randint(-2, 2), 10, 120))
 
     height = state["height"]
     weight = state["weight"]
@@ -72,13 +96,9 @@ def make_payload() -> dict:
         "device_id": CID,
         "userno": USERNO,
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-
-        # 基本身體資料
         "height": round(height, 1),
         "weight": round(weight, 1),
         "bmi": bmi,
-
-        # 新版監測欄位
         "heart_rate": state["heart_rate"],
         "steps": state["steps"],
         "active_minutes": state["active_minutes"],
