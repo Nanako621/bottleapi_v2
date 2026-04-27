@@ -272,6 +272,10 @@ def send_static_res(filename):
 def dashboard():
     return static_file('realmedashboard.html', root='.')
 
+@app.get("/iot_intro.html")
+def intro():
+    return static_file("iot_intro.html", root=".")
+
 @app.get("/patient_entry.html")
 def patient_entry_page():
     return static_file('patient_entry.html', root='.')
