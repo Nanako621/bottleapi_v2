@@ -9,6 +9,7 @@ from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
 from aiomqtt import Client
+from statistics import mean
 
 if sys.platform.startswith("win"):
     try:
@@ -23,6 +24,10 @@ USER = "supubandsub"
 PASS = "Su1216mq"
 TOPIC = "class/2025/lab1/stu1/data"
 CID  = "subscriber-stu1-001"
+data_buffer = {}
+buffer_lock = threading.Lock()
+current_user_email = None  # 初始為 None，表示未登入
+
 
 def make_tls():
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -51,8 +56,74 @@ def get_last_mqtt_ts():
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
+def flush_to_db(email):
+    with buffer_lock:
+        if email not in data_buffer: return
+        b = data_buffer[email]
+        avg_hr = round(mean(b['hr']), 1) if b['hr'] else 0
+        avg_spo2 = round(mean(b['spo2']), 1) if b['spo2'] else 0
+        steps_delta = b['steps'][-1] - b['steps'][0] if len(b['steps']) > 1 else 0
+        del data_buffer[email] 
+
+    try:
+        conn = sqlite3.connect('iot_platform.db')
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO health_logs (email, heart_rate, steps_delta, spo2)
+            VALUES (?, ?, ?, ?)
+        """, (email, avg_hr, steps_delta, avg_spo2))
+        conn.commit()
+        conn.close()
+        logging.info(f" [DB Export] 已寫入 {email} 的彙整數據")
+    except Exception as e:
+        logging.error(f" [DB Export] 寫入失敗: {e}")
+        
+def maintenance_task():
+    """每日凌晨執行：產生昨日摘要並清理 7 天前的舊 Log"""
+    while True:
+        # 1. 計算距離明天凌晨 00:01 還有多久
+        now = time.localtime()
+        # 計算秒數，讓它在每天凌晨執行
+        seconds_until_midnight = (24 - now.tm_hour - 1) * 3600 + (60 - now.tm_min - 1) * 60 + (60 - now.tm_sec)
+        logging.info(f" [System] 維護任務將在 {seconds_until_midnight} 秒後執行")
+        
+        # 等待到凌晨
+        gsleep(seconds_until_midnight + 60) 
+        
+        logging.info(" [System] 開始執行每日維護：產生摘要與清理舊數據...")
+        try:
+            conn = sqlite3.connect('iot_platform.db')
+            cursor = conn.cursor()
+            
+            # 1. 產生昨日摘要 (計算昨日平均值並寫入 daily_summaries)
+            # 這裡會幫每位有資料的使用者計算一筆昨日總結
+            cursor.execute('''
+                INSERT OR IGNORE INTO daily_summaries 
+                (email, summary_date, avg_heart_rate, max_heart_rate, total_steps, avg_spo2)
+                SELECT 
+                    email, 
+                    date('now', '-1 day', 'localtime'),
+                    AVG(heart_rate), 
+                    MAX(heart_rate), 
+                    SUM(steps_delta), 
+                    AVG(spo2)
+                FROM health_logs
+                WHERE date(recorded_at) = date('now', '-1 day', 'localtime')
+                GROUP BY email
+            ''')
+            
+            # 2. 清理過期數據 (刪除超過 7 天的詳細 Log)
+            cursor.execute("DELETE FROM health_logs WHERE recorded_at < date('now', '-7 days', 'localtime')")
+            
+            conn.commit()
+            conn.close()
+            logging.info(" [System] 每日維護完成：摘要已生成，舊資料已清理。")
+        except Exception as e:
+            logging.error(f" [System] 維護任務發生錯誤: {e}")
+            
+            
 def broadcaster():
-    """從 inbox 取出字串，送到所有 WebSocket client；並打印 debug 日誌"""
+    """從 inbox 取出字串，送到所有 WebSocket client，並處理 5 分鐘數據彙整"""
     sent_counter = 0
     while True:
         try:
@@ -61,24 +132,56 @@ def broadcaster():
             gsleep(0.05)
             continue
 
-        logging.info(f"[broadcaster] pop inbox msg (len sockets={len(sockets)}) -> {msg[:120]!r}")
+        # --- [邏輯優化] 只有登入後才處理數據存儲 ---
+        if current_user_email is not None:
+            try:
+                raw_data = json.loads(msg)
+                payload = raw_data.get("payload")
+                if isinstance(payload, dict):
+                    email = current_user_email  # 強制使用目前登入的帳號，防止數據誤植
+                    
+                    hr = payload.get("heart_rate")
+                    spo2 = payload.get("spo2")
+                    steps = payload.get("steps")
 
+                    if hr is not None and spo2 is not None and steps is not None:
+                        with buffer_lock:
+                            # 如果這個 email 剛登入，這裡是它第一次計時的起點
+                            if email not in data_buffer:
+                                data_buffer[email] = {
+                                    'hr': [], 'spo2': [], 'steps': [], 
+                                    'start_time': time.time()
+                                }
+                                logging.info(f" [Buffer] 開始為 {email} 計時 5 分鐘...")
+                            
+                            data_buffer[email]['hr'].append(hr)
+                            data_buffer[email]['spo2'].append(spo2)
+                            data_buffer[email]['steps'].append(steps)
+                            
+                            # 判斷是否累積滿 5 分鐘
+                            if time.time() - data_buffer[email]['start_time'] >= 300:
+                                threading.Thread(target=flush_to_db, args=(email,), daemon=True).start()
+            except Exception as e:
+                logging.debug(f"[buffer] 解析失敗: {e}")
+        else:
+            # 如果沒登入，我們什麼都不做（不進入 data_buffer），所以不會計時，也不會寫入 DB
+            pass
+
+        # 無論有沒有登入，廣播都要繼續（這樣首頁或展示畫面才會有即時跳動的數字）
         dead = []
         for ws in list(sockets):
             try:
                 ws.send(msg)
                 sent_counter += 1
-                logging.debug(f"[broadcaster] sent to ws {id(ws)} (total sent {sent_counter})")
-            except Exception as e:
-                logging.warning(f"[broadcaster] send failed to ws {id(ws)} -> {e}")
+            except Exception:
                 dead.append(ws)
         for ws in dead:
             sockets.discard(ws)
-            logging.info(f"[broadcaster] removed dead ws {id(ws)}; now sockets={len(sockets)}")
-
-
+            
 # 啟動 broadcaster（gevent）
 gspawn(broadcaster)
+# 啟動每日維護任務
+gspawn(maintenance_task)
 
 # ---- aiomqtt + Thread 的 asyncio 事件迴圈----
 async def mqtt_sub():
@@ -276,9 +379,9 @@ def dashboard():
 def patient_entry_page():
     return static_file('patient_entry.html', root='.')
 
-# 登入驗證 API
 @app.post('/api/login')
 def do_login():
+    global current_user_email
     data = request.json
     email = data.get('email')
     password = data.get('password')
@@ -286,11 +389,12 @@ def do_login():
     try:
         conn = sqlite3.connect('iot_platform.db')
         cur = conn.cursor()
-        # 查詢是否有匹配的帳號密碼
         cur.execute("SELECT * FROM users WHERE email=? AND password=?", (email, password))
         user = cur.fetchone()
         
         if user:
+            current_user_email = email # 【關鍵】在此時才標記登入成功
+            logging.info(f" [System] 使用者 {email} 登入成功，開始監控數據。")
             return {"status": "success", "message": "登入成功"}
         else:
             response.status = 401
@@ -381,6 +485,31 @@ def add_patient():
         return {"status": "error", "message": f"資料庫寫入失敗: {str(e)}"}
     finally:
         conn.close()
+        
+@app.post('/api/contact')
+def handle_contact():
+    data = request.json
+    name = data.get('name')
+    email = data.get('email')
+    message = data.get('message')
+
+    if not name or not email or not message:
+        return {"status": "error", "message": "所有欄位皆為必填"}
+
+    try:
+        conn = sqlite3.connect('iot_platform.db')
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)',
+            (name, email, message)
+        )
+        conn.commit()
+        conn.close()
+        return {"status": "success", "message": "留言已送出，我們會儘快聯絡您！"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    
+    
 # 獲取個人資料 API (供進入頁面時顯示舊資料)
 @app.get('/api/get_patient/<email>')
 def get_patient(email):
@@ -413,7 +542,24 @@ def get_patient(email):
         return {"status": "error", "message": str(e)}
     finally:
         conn.close()
-        
+    
+    
+@app.get("/ws")
+def handle_websocket():
+    ws = request.environ.get('wsgi.websocket')
+    if not ws:
+        abort(400, "Expected WebSocket request.")
+    sockets.add(ws)
+    logging.info(f" [WS] 新連線已建立: {id(ws)}")
+    try:
+        while True:
+            msg = ws.receive()
+            if msg is None: break
+    except WebSocketError:
+        pass
+    finally:
+        sockets.discard(ws)
+        logging.info(f" [WS] 連線已中斷: {id(ws)}")
                 
 if __name__ == "__main__":
     print("啟動 Web Server (0.0.0.0:8080)...")

@@ -180,13 +180,12 @@
   </style>
 </head>
 <body>
-
   <header class="navbar">
     <div class="nav-left">
-      <a href="javascript:history.back()" class="back-btn" title="返回上一頁">
+      <a href="/" class="back-btn" title="返回首頁">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       </a>
-      <div class="brand">大學生健康IoT平台</div>
+      <div class="brand">返回首頁 - 大學生健康IoT平台</div>
     </div>
     <div style="color:#d1d5db; font-size:20px;">◡̈</div>
   </header>
@@ -203,7 +202,8 @@
 
       <div class="input-group">
         <label>性別</label>
-        <select id="gender">
+        <select id="gender" name="gender" required>
+          <option value="" disabled selected>請選擇</option>
           <option value="男">男</option>
           <option value="女">女</option>
         </select>
@@ -244,143 +244,162 @@
     const daySelect = document.getElementById("birth_day");
     const heightSelect = document.getElementById("height");
     const weightSelect = document.getElementById("weight");
+    const genderSelect = document.getElementById("gender");
 
-    // --- 1. 先強制生成所有選單選項 (確保這部分一定會執行) ---
+    // --- 1. 生成所有選單選項 ---
     const currentYear = new Date().getFullYear();
     
     // 生成年份 (1920 - 今年)
-    yearSelect.innerHTML = '<option value="">請選擇</option>';
+    yearSelect.innerHTML = '<option value="" disabled>請選擇</option>';
     for (let y = currentYear; y >= 1920; y--) {
         yearSelect.add(new Option(y + " 年", y));
     }
 
     // 生成月份 (01-12)
-    monthSelect.innerHTML = '<option value="">請選擇</option>';
+    monthSelect.innerHTML = '<option value="" disabled>請選擇</option>';
     for (let m = 1; m <= 12; m++) {
         const val = m.toString().padStart(2, '0');
         monthSelect.add(new Option(m + " 月", val));
     }
 
     // 生成日期 (01-31)
-    daySelect.innerHTML = '<option value="">請選擇</option>';
+    daySelect.innerHTML = '<option value="" disabled>請選擇</option>';
     for (let d = 1; d <= 31; d++) {
         const val = d.toString().padStart(2, '0');
         daySelect.add(new Option(d + " 日", val));
     }
 
     // 生成身高 (50-250)
-    heightSelect.innerHTML = '<option value="">請選擇</option>';
+    heightSelect.innerHTML = '<option value="" disabled>請選擇</option>';
     for (let h = 50; h <= 250; h++) {
         heightSelect.add(new Option(h + " cm", h));
     }
 
     // 生成體重 (20-200)
-    weightSelect.innerHTML = '<option value="">請選擇</option>';
+    weightSelect.innerHTML = '<option value="" disabled>請選擇</option>';
     for (let w = 20; w <= 200; w++) {
         weightSelect.add(new Option(w + " kg", w));
     }
 
-    // --- 2. 選單生成完畢後，再從資料庫抓資料填入 ---
+    // --- 2. 核心邏輯：從資料庫抓資料填入，若無資料則套用人性化初始值 ---
     const email = localStorage.getItem("user_email");
     if (email) {
         try {
             const response = await fetch(`/api/get_patient/${email}`);
             const res = await response.json();
             
-            if (res.status === "success") {
-                // 填入文字
+            if (res.status === "success" && res.data) {
+                // 【情境 A：舊用戶】從資料庫讀取現有資料
                 document.getElementById("name").value = res.data.name || "";
-                document.getElementById("gender").value = res.data.gender || "男";
                 
-                // 填入選單數值 (這時選項已經存在，所以可以正確選取)
-                if (res.data.birth_year) yearSelect.value = res.data.birth_year;
-                if (res.data.birth_month) monthSelect.value = res.data.birth_month.toString().padStart(2, '0');
-                if (res.data.birth_day) daySelect.value = res.data.birth_day.toString().padStart(2, '0');
+                // 只有當資料庫有值時才覆蓋預設值
+                if (res.data.gender) {
+                    genderSelect.value = res.data.gender;
+                } else {
+                    genderSelect.value = ""; // 顯示「請選擇」
+                }
+
+                yearSelect.value = res.data.birth_year || 2005;
+                monthSelect.value = res.data.birth_month ? res.data.birth_month.toString().padStart(2, '0') : "01";
+                daySelect.value = res.data.birth_day ? res.data.birth_day.toString().padStart(2, '0') : "01";
                 
-                if (res.data.height) heightSelect.value = Math.round(res.data.height);
-                if (res.data.weight) weightSelect.value = Math.round(res.data.weight);
+                heightSelect.value = res.data.height ? Math.round(res.data.height) : 165;
+                weightSelect.value = res.data.weight ? Math.round(res.data.weight) : 55;
                 
-                console.log("資料庫資料載入成功");
+                console.log("已載入舊用戶資料");
+            } else {
+                // 【情境 B：新用戶】設定你要求的初始預設值
+                genderSelect.value = "";    // 1. 性別顯示「請選擇」
+                yearSelect.value = 2005;    // 2. 出生年預設 2005
+                monthSelect.value = "01";   // 月份預設 1 月
+                daySelect.value = "01";     // 日期預設 1 日
+                heightSelect.value = 165;   // 3. 身高預設 165
+                weightSelect.value = 55;    // 4. 體重預設 55
+                console.log("新用戶，已設定人性化初始值");
             }
         } catch (err) {
-            console.error("載入雲端資料出錯:", err);
+            console.error("載入資料出錯，套用預設值:", err);
+            // 發生錯誤時也給予預設值
+            genderSelect.value = "";
+            yearSelect.value = 2005;
+            heightSelect.value = 165;
+            weightSelect.value = 55;
         }
     }
 });
+
   async function saveAll() {
-  // 1. 取得目前登入者的 Email (必須從 localStorage 取得)
-  const email = localStorage.getItem("user_email"); 
-  const name = document.getElementById('name').value.trim();
-  
-  // 安全檢查：如果沒登入就踢回首頁
-  if (!email) { 
-    alert("偵測不到登入資訊，請重新登入"); 
-    window.location.href = 'iot_intro.html';
-    return; 
-  }
-  
-  if (!name) { 
-    alert("請輸入姓名"); 
-    return; 
-  }
-  
-  // 2. 收集表單數據
-  const gender = document.getElementById('gender').value;
-  const height = document.getElementById('height').value;
-  const weight = document.getElementById('weight').value;
-  
-  // 取得出生年月日數值
-  const bYear = parseInt(document.getElementById('birth_year').value);
-  const bMonth = parseInt(document.getElementById('birth_month').value);
-  const bDay = parseInt(document.getElementById('birth_day').value);
-  const fullBirth = `${bYear}-${document.getElementById('birth_month').value}-${document.getElementById('birth_day').value}`;
-
-  // --- 3. 同步到 localStorage (確保即時儀表板能讀到資料) ---
-  localStorage.setItem("patient_name", name);
-  localStorage.setItem("patient_gender", gender);
-  localStorage.setItem("patient_birth", fullBirth);
-  
-  const localData = JSON.parse(localStorage.getItem("patient_data") || "{}");
-  localData.height = Number(height);
-  localData.weight = Number(weight);
-  localStorage.setItem("patient_data", JSON.stringify(localData));
-
-  // --- 4. 準備 API Payload (對應更新後的資料庫欄位) ---
-  const payload = {
-    email: email,      // 主鍵
-    name: name,
-    birth_year: bYear,
-    birth_month: bMonth,
-    birth_day: bDay,
-    gender: gender,
-    height: Number(height),
-    weight: Number(weight)
-  };
-
-  // --- 5. 透過 Fetch API 傳送到 Python 後端 ---
-  try {
-    const response = await fetch('/api/patient_entry', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    const email = localStorage.getItem("user_email"); 
+    const name = document.getElementById('name').value.trim();
     
-    const result = await response.json();
-
-    if (response.ok) {
-      alert('資料儲存成功！已同步至雲端資料庫（記錄出生年月日）。');
-      localStorage.removeItem("edit_mode");
-      window.location.href = 'realmedashboard.html';
-    } else {
-      alert('同步失敗：' + (result.message || '未知錯誤'));
+    if (!email) { 
+      alert("偵測不到登入資訊，請重新登入"); 
+      window.location.href = 'iot_intro.html';
+      return; 
     }
-  } catch (error) {
-    console.error("Fetch error:", error);
-    alert('無法連接到伺服器，已先將資料暫存於瀏覽器。');
-    window.location.href = 'realmedashboard.html';
+    
+    if (!name) { 
+      alert("請輸入姓名"); 
+      return; 
+    }
+    
+    const gender = document.getElementById('gender').value;
+    const height = document.getElementById('height').value;
+    const weight = document.getElementById('weight').value;
+    
+    // 檢查是否選擇了性別
+    if (!gender) {
+      alert("請選擇性別");
+      return;
+    }
+
+    const bYear = parseInt(document.getElementById('birth_year').value);
+    const bMonth = parseInt(document.getElementById('birth_month').value);
+    const bDay = parseInt(document.getElementById('birth_day').value);
+    const fullBirth = `${bYear}-${document.getElementById('birth_month').value}-${document.getElementById('birth_day').value}`;
+
+    localStorage.setItem("patient_name", name);
+    localStorage.setItem("patient_gender", gender);
+    localStorage.setItem("patient_birth", fullBirth);
+    
+    const localData = JSON.parse(localStorage.getItem("patient_data") || "{}");
+    localData.height = Number(height);
+    localData.weight = Number(weight);
+    localStorage.setItem("patient_data", JSON.stringify(localData));
+
+    const payload = {
+      email: email,
+      name: name,
+      birth_year: bYear,
+      birth_month: bMonth,
+      birth_day: bDay,
+      gender: gender,
+      height: Number(height),
+      weight: Number(weight)
+    };
+
+    try {
+      const response = await fetch('/api/patient_entry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const result = await response.json();
+      if (response.ok) {
+        alert('資料儲存成功！');
+        localStorage.removeItem("edit_mode");
+        window.location.href = 'realmedashboard.html';
+      } else {
+        alert('同步失敗：' + (result.message || '未知錯誤'));
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+      alert('無法連接到伺服器，資料已先暫存於瀏覽器。');
+      window.location.href = 'realmedashboard.html';
+    }
   }
-}
-  </script>
+</script>
 </body>
 </html>
 

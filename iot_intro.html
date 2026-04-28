@@ -50,8 +50,21 @@
 
     .brand { font-size: 24px; font-weight: 500; color: #374151; letter-spacing: 0.02em; }
 
+    /* 導覽列排版保持一致 */
     .nav-links { display: flex; align-items: center; gap: 34px; font-size: 16px; color: #6b7280; }
-    .nav-links a:hover, .nav-links a.active { color: var(--primary); font-weight: 600; }
+
+    /* 增加平滑顏色切換效果 */
+    .nav-links a {
+      transition: color 0.3s ease;
+      cursor: pointer;
+    }
+
+    /* 點選後或是滑鼠移入時顯示藍色並加粗 */
+    .nav-links a:hover, 
+    .nav-links a.active { 
+      color: var(--primary); 
+      font-weight: 600; 
+    }
 
     .nav-gear {
       width: 44px; height: 44px; border: 1px solid #d1d5db; border-radius: 6px;
@@ -113,6 +126,40 @@
     }
 
     .close-btn { margin-top: 15px; background: none; border: none; color: #9ca3af; cursor: pointer; }
+  
+  /* 負責控制聯絡我們整個區塊的排版與背景 */
+#contact {
+  padding: 80px 20px;
+  text-align: center;
+  background: #fff; /* 或原本的背景色 */
+}
+
+/* 負責控制表單整體的寬度與置中 */
+#contact form {
+  max-width: 400px;
+  margin: 20px auto; /* auto 負責水平置中，20px 控制與上方標題的距離 */
+}
+
+/* 關鍵修正：負責控制輸入框與留言框的大小與下方間距 */
+#contact input, 
+#contact textarea {
+  width: 100%;       /* 填滿父容器(form)的 400px 寬度 */
+  padding: 10px;      /* 增加內距，讓文字不會貼邊 */
+  margin-bottom: 12px; /* 關鍵：這是控制框與框之間距離的 Margin */
+  border: 1px solid #e5e7eb; /* 恢復原本細細的框線 */
+  border-radius: 8px; /* 恢復圓角 */
+}
+
+/* 負責送出按鈕的樣式 */
+#contact button {
+  background: #2db7d3; /* 恢復原本亮藍色 */
+  color: #fff;
+  border: none;
+  padding: 12px 24px;  /* 增加按鈕內距，讓它大一點 */
+  border-radius: 999px; /* 膠囊狀 */
+  font-size: 18px;     /* 恢復字體大小 */
+  margin-top: 10px;    /* 增加按鈕與留言框的距離 */
+}
   </style>
 </head>
 <body>
@@ -145,6 +192,18 @@
         <div class="feature-card"><h3>🤖 智慧提醒建議</h3><p>主動提供作息異常提醒與 AI 調整建議。</p></div>
       </div>
     </div>
+  </section>
+
+  <section id="contact">
+  <h2 class="section-title">聯絡我們</h2>
+  <p class="section-desc">有任何問題或建議，歡迎留下訊息</p>
+
+  <form id="contactForm">
+    <input type="text" id="contactName" placeholder="你的姓名" required>
+    <input type="email" id="contactEmail" placeholder="你的Email" required>
+    <textarea id="contactMsg" placeholder="想說的話..." required></textarea>
+    <button type="submit">送出</button>
+    </form>
   </section>
 
   <div id="loginModal" class="modal-overlay">
@@ -181,50 +240,56 @@
   <button class="ai-assistant" onclick="location.href='realmedashboard.html'"><span>✦</span> AI 助理</button>
 
   <script>
+    // 彈窗控制
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function switchModal(closeId, openId) { closeModal(closeId); openModal(openId); }
 
-  async function handleLogin(e) {
-  e.preventDefault();
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-
-  try {
-    const response = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: password })
+    // 導覽列 Active 狀態切換邏輯
+    const links = document.querySelectorAll('.nav-links a');
+    links.forEach(link => {
+      link.addEventListener('click', function() {
+        // 移除所有連結的 active 樣式
+        links.forEach(l => l.classList.remove('active'));
+        // 幫目前點擊的連結加上 active 樣式
+        this.classList.add('active');
+      });
     });
-    
-    const result = await response.json();
-    
-    if (response.ok) {
-      // 【關鍵修改】將 email 存入 localStorage，讓下一頁 patient_entry.html 能夠抓到是誰在登入
-      localStorage.setItem("user_email", email); 
-      
-      alert('登入成功！請先填寫/確認您的基本健康資料，以便我們提供更精準的分析與建議。');
-      
-      // 跳轉至基本資料填寫頁面
-      window.location.href = 'patient_entry.html'; 
-    } else {
-      // 顯示後端回傳的錯誤訊息（例如：帳號或密碼錯誤）
-      alert('登入失敗：' + (result.message || '請檢查帳號密碼'));
-    }
-  } 
-  catch (error) {
-    console.error('Login Error:', error);
-    alert('無法連接到伺服器，請確保 Python 程式正在運行。');
-  }
-}
-  
 
+    // 登入處理
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem("user_email", email); 
+          alert('登入成功！請先填寫/確認您的基本健康資料。');
+          window.location.href = 'patient_entry.html'; 
+        } else {
+          alert('登入失敗：' + (result.message || '請檢查帳號密碼'));
+        }
+      } catch (error) {
+        console.error('Login Error:', error);
+        alert('無法連接到伺服器，請確保 Python 程式正在運行。');
+      }
+    }
+  
+    // 註冊處理
     async function handleRegister(e) {
       e.preventDefault();
       const email = document.getElementById('regEmail').value;
       const password = document.getElementById('regPassword').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
-      
       const passwordRule = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
 
       if (!passwordRule.test(password)) {
@@ -253,21 +318,31 @@
         alert('無法連接到伺服器，請確保 Python 程式正在運行。');
       }
     }
+
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const formData = {
+    name: document.getElementById('contactName').value,
+    email: document.getElementById('contactEmail').value,
+    message: document.getElementById('contactMsg').value
+  };
+
+  try {
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+    const result = await response.json();
+    alert(result.message);
+    if (result.status === "success") {
+      this.reset(); // 清空表單
+    }
+  } catch (error) {
+    alert('送出失敗，請稍後再試');
+  }
+});
   </script>
-
-  <!-- 🔥 聯絡區塊（這裡是正確位置） -->
-  <section id="contact" style="padding:80px 20px; text-align:center; background:#fff;">
-    <h2 style="font-size:28px; margin-bottom:10px;">聯絡我們</h2>
-    <p style="color:#6b7280;">有任何問題或建議，歡迎留下訊息</p>
-
-    <form style="max-width:400px; margin:20px auto;">
-      <input type="text" placeholder="你的姓名" style="width:100%; padding:10px; margin-bottom:10px;"><br>
-      <input type="email" placeholder="你的Email" style="width:100%; padding:10px; margin-bottom:10px;"><br>
-      <textarea placeholder="想說的話..." style="width:100%; padding:10px;"></textarea><br><br>
-      <button type="submit" style="padding:10px 20px; border-radius:999px; background:#2db7d3; color:#fff; border:none;">
-        送出
-      </button>
-    </form>
-  </section>
 </body>
 </html>
