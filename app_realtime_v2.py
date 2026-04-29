@@ -10,6 +10,7 @@ from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
 from aiomqtt import Client
 from statistics import mean
+from datetime import datetime
 
 if sys.platform.startswith("win"):
     try:
@@ -58,25 +59,58 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 def flush_to_db(email):
     with buffer_lock:
-        if email not in data_buffer: return
-        b = data_buffer[email]
-        avg_hr = round(mean(b['hr']), 1) if b['hr'] else 0
-        avg_spo2 = round(mean(b['spo2']), 1) if b['spo2'] else 0
-        steps_delta = b['steps'][-1] - b['steps'][0] if len(b['steps']) > 1 else 0
-        del data_buffer[email] 
+        # 從緩存中取出該使用者的數據並清空
+        data = data_buffer.pop(email, None)
+    
+    if data:
+        try:
+            # 計算各項數值 (均值或差值)
+            avg_hr = sum(data['hr']) / len(data['hr']) if data['hr'] else 0
+            avg_spo2 = sum(data['spo2']) / len(data['spo2']) if data['spo2'] else 0
+            # 步數計算差值 (最後一筆減去第一筆)
+            total_steps = data['steps'][-1] - data['steps'][0] if len(data['steps']) > 1 else 0
+            
+            avg_active = sum(data['active_min']) / len(data['active_min']) if data['active_min'] else 0
+            avg_sleep_h = data['sleep_h'][-1] if data['sleep_h'] else 0  # 睡眠取最新狀態
+            avg_sleep_q = data['sleep_q'][-1] if data['sleep_q'] else 0
+            avg_sedentary = sum(data['sedentary']) / len(data['sedentary']) if data['sedentary'] else 0
+            avg_cal = sum(data['cal']) / len(data['cal']) if data['cal'] else 0
+            avg_hrv = sum(data['hrv']) / len(data['hrv']) if data['hrv'] else 0
 
-    try:
-        conn = sqlite3.connect('iot_platform.db')
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO health_logs (email, heart_rate, steps_delta, spo2)
-            VALUES (?, ?, ?, ?)
-        """, (email, avg_hr, steps_delta, avg_spo2))
-        conn.commit()
-        conn.close()
-        logging.info(f" [DB Export] 已寫入 {email} 的彙整數據")
-    except Exception as e:
-        logging.error(f" [DB Export] 寫入失敗: {e}")
+            # 連接資料庫並寫入
+            conn = sqlite3.connect('iot_platform.db')
+            cur = conn.cursor()
+            
+            # 嚴格對齊你要求的 11 個項目順序
+            sql = """
+                INSERT INTO health_logs 
+                (email, heart_rate, steps_delta, spo2, active_minutes, 
+                 sleep_hours, sleep_quality, sedentary_time, calories, hrv, recorded_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            
+            # 變數順序必須與上方 SQL 括號內的欄位順序完全對應
+            params = (
+                email,           # 1
+                avg_hr,          # 2
+                total_steps,     # 3
+                avg_spo2,        # 4
+                avg_active,      # 5
+                avg_sleep_h,     # 6
+                avg_sleep_q,     # 7
+                avg_sedentary,   # 8
+                avg_cal,         # 9
+                avg_hrv,         # 10
+                datetime.now()   # 11 (時間放在最後)
+            )
+            
+            cur.execute(sql, params)
+            conn.commit()
+            conn.close()
+            logging.info(f" [DB Export] 已成功存入 {email} 的 11 項彙整數據（含 9 項生理指標）。")
+            
+        except Exception as e:
+            logging.error(f" [DB Export] 寫入失敗: {e}")
         
 def maintenance_task():
     """每日凌晨執行：產生昨日摘要並清理 7 天前的舊 Log"""
@@ -146,17 +180,26 @@ def broadcaster():
 
                     if hr is not None and spo2 is not None and steps is not None:
                         with buffer_lock:
-                            # 如果這個 email 剛登入，這裡是它第一次計時的起點
+                            # 確保初始化包含這 9 個列表
                             if email not in data_buffer:
                                 data_buffer[email] = {
                                     'hr': [], 'spo2': [], 'steps': [], 
+                                    'active_min': [], 'sleep_h': [], 'sleep_q': [],
+                                    'sedentary': [], 'cal': [], 'hrv': [],
                                     'start_time': time.time()
                                 }
-                                logging.info(f" [Buffer] 開始為 {email} 計時 5 分鐘...")
-                            
-                            data_buffer[email]['hr'].append(hr)
-                            data_buffer[email]['spo2'].append(spo2)
-                            data_buffer[email]['steps'].append(steps)
+
+                            # 確保 payload 提取正確 (假設 payload 是來自前端的字典)
+                            p = raw_data.get("payload", {})
+                            data_buffer[email]['hr'].append(p.get("heart_rate", 0))
+                            data_buffer[email]['spo2'].append(p.get("spo2", 0))
+                            data_buffer[email]['steps'].append(p.get("steps", 0))
+                            data_buffer[email]['active_min'].append(p.get("active_minutes", 0))
+                            data_buffer[email]['sleep_h'].append(p.get("sleep_hours", 0))
+                            data_buffer[email]['sleep_q'].append(p.get("sleep_quality", 0))
+                            data_buffer[email]['sedentary'].append(p.get("sedentary_time", 0))
+                            data_buffer[email]['cal'].append(p.get("calories", 0))
+                            data_buffer[email]['hrv'].append(p.get("hrv", 0))
                             
                             # 判斷是否累積滿 5 分鐘
                             if time.time() - data_buffer[email]['start_time'] >= 300:
