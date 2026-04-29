@@ -1436,6 +1436,16 @@ document.addEventListener("keydown", function(e){
     <div class="ai-panel-title">AI 健康問答</div>
     <button class="ai-close" onclick="closeAiPanel()">關閉</button>
   </div>
+  
+<div id="eduModal">
+  <div class="modal-content">
+    <div class="modal-body">
+      <div id="eduTextTitle"></div>
+      <div id="eduTextContent"></div>
+    </div>
+    <button class="close-btn" onclick="closeEdu()">返回主頁</button>
+  </div>
+</div>
 
   <div class="ai-messages" id="aiMessages">
     <div class="ai-msg ai-bot">
@@ -1447,5 +1457,6 @@ document.addEventListener("keydown", function(e){
     <textarea id="aiQuestion" placeholder="輸入你的健康問題..."></textarea>
     <button class="ai-send" onclick="sendAiQuestion()">送出</button>
   </div>
-</div></body>
+</div>
+</body>
 </html>
