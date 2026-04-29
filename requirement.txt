@@ -10,3 +10,5 @@ pycparser==2.23
 python-dotenv==1.1.1
 zope.event==6.0
 zope.interface==8.0
+google-genai
+python-dotenv
