@@ -2,7 +2,7 @@
 # 保留你的設計：1) aiomqtt 在 background asyncio loop 訂閱  2) gevent + Bottle 提供 WebSocket  3) queue 作橋接
 # 新增：mock_publisher 每 3 秒推送與前端相容的指標（當 MQTT 不活躍時仍可看到即時資料）
 
-import sqlite3, sys, ssl, json, asyncio, threading, queue, certifi, time, random
+import sqlite3, sys, ssl, json, asyncio, threading, queue, certifi, time, random, os
 from bottle import Bottle, request, abort, response, static_file
 from gevent import sleep as gsleep, spawn as gspawn
 from gevent.pywsgi import WSGIServer
@@ -11,6 +11,33 @@ from geventwebsocket import WebSocketError
 from aiomqtt import Client
 from statistics import mean
 from datetime import datetime
+from dotenv import load_dotenv
+from google import genai
+
+# 1. 確保精準讀取 .env 檔案
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(BASE_DIR, ".env")
+load_dotenv(env_path)
+
+# 2. 取得並檢查金鑰
+api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    print("❌ 錯誤：找不到 GEMINI_API_KEY，請檢查 .env 檔案內容與位置！")
+else:
+    # 顯示金鑰前後幾碼，方便你確認是不是自己申請的那組
+    print(f"✅ GEMINI_API_KEY 讀取成功！")
+    print(f"目前使用的 Key: {api_key[:6]}......{api_key[-4:]}")
+
+# 3. 初始化 Gemini Client (關鍵：加入 http_options 解決 404 問題)
+try:
+    gemini_client = genai.Client(
+        api_key=api_key,
+        http_options={'api_version': 'v1'} # 強制使用 v1 正式版介面，避免 v1beta 找不到模型
+    )
+    print("🚀 Gemini Client 初始化完成 (API Version: v1)")
+except Exception as e:
+    print(f"❌ Client 初始化失敗: {e}")
 
 if sys.platform.startswith("win"):
     try:
@@ -556,7 +583,62 @@ def handle_contact():
     except Exception as e:
         return {"status": "error", "message": str(e)}
     
-    
+@app.post("/api/chatgpt")
+def chatgpt_assistant():
+    data = request.json or {}
+    question = data.get("question", "").strip()
+
+    if not question:
+        response.status = 400
+        return {"status": "error", "answer": "請輸入問題。"}
+
+    system_prompt = """
+你是大學生健康 IoT 平台的 AI 健康小幫手。
+請使用繁體中文回答。
+只能提供健康管理、衛教、生活習慣、睡眠、運動、久坐、心率、血氧等一般建議。
+不能診斷疾病，不能開藥，不能取代醫師。
+回答要簡短、清楚、適合大學生理解。
+最後一定要提醒：若有明顯不適或症狀持續，請尋求醫療專業協助。
+"""
+
+    try:
+        result = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=system_prompt + "\n\n使用者問題：" + question
+        )
+
+        return {
+            "status": "success",
+            "answer": result.text
+        }
+
+    except Exception as e:
+        msg = str(e)
+
+        if "quota" in msg.lower() or "429" in msg:
+            answer = "目前 Gemini 額度暫時受限，先提供基礎健康建議：\n\n"
+
+            if "睡" in question:
+                answer += "睡眠品質不好可能與壓力、作息不固定、睡前使用手機或咖啡因攝取有關。建議固定睡眠時間、睡前 30 分鐘減少螢幕使用，並維持安靜舒適的睡眠環境。"
+            elif "久坐" in question or "坐" in question:
+                answer += "久坐時間過長可能增加腰背不適與代謝負擔。建議每 30–60 分鐘起身活動 3–5 分鐘，做簡單伸展或走動。"
+            elif "心率" in question or "心跳" in question:
+                answer += "一般靜息心率約 50–100 bpm。若長期偏高或伴隨胸悶、頭暈、喘等不適，建議尋求醫療評估。"
+            elif "血氧" in question or "spo2" in question.lower():
+                answer += "一般血氧常見約 95% 以上。若明顯低於平常，或合併喘、胸悶等症狀，應盡快尋求醫療協助。"
+            else:
+                answer += "建議維持規律作息、均衡飲食、適度運動，並避免長時間久坐。"
+
+            answer += "\n\n以上建議僅供健康管理與衛教參考，若有明顯不適或症狀持續，請尋求醫療專業協助。"
+            return {"status": "success", "answer": answer}
+
+        response.status = 500
+        return {
+            "status": "error",
+            "answer": "AI 服務暫時無法連線：" + msg
+        }
+        
+        
 # 獲取個人資料 API (供進入頁面時顯示舊資料)
 @app.get('/api/get_patient/<email>')
 def get_patient(email):
