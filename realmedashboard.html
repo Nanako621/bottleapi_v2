@@ -8,10 +8,19 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
   
+    /* 1. 常規體 */
     @font-face {
       font-family: 'ProperScript';
       src: url('ProperScript-Regular.ttf') format('truetype');
-      font-weight: normal;
+      font-weight: normal; /* 或是 400 */
+      font-style: normal;
+    }
+
+    /* 2. 粗體（新增這段） */
+    @font-face {
+      font-family: 'ProperScript';
+      src: url('ProperScript-Bold.ttf') format('truetype'); /* 請確保有這個檔案 */
+      font-weight: bold; /* 或是 700 */
       font-style: normal;
     }
 
@@ -1379,15 +1388,34 @@ function closeAiPanel(){
   }
 }
 
+// 💡 新增：將 **文字** 轉換成 <strong>文字</strong> 的解析函式
+function parseMarkdown(text) {
+  if (!text) return "";
+  // 1. 將 1. 2. 3. 或 * 等換行標籤做簡單換行處理 (可選，讓排版更好看)
+  let formattedText = text.replace(/\n/g, '<br>');
+  // 2. 使用正規表達式將 **粗體內容** 替換成 <strong>粗體內容</strong>
+  return formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
+// 🛠️ 修改後的 addAiMessage
 function addAiMessage(text, type){
   const box = document.getElementById("aiMessages");
   const div = document.createElement("div");
   div.className = "ai-msg " + type;
-  div.innerText = text;
+  
+  // 💡 修正：如果是 AI 的回覆 (ai-bot)，就解析 Markdown 語法使其支援粗體
+  // 如果是使用者自己輸入的，就維持純文字或同樣解析
+  if (type === "ai-bot") {
+    div.innerHTML = parseMarkdown(text);
+  } else {
+    div.innerText = text; 
+  }
+  
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
 
+// 🛠️ sendAiQuestion 維持邏輯，但修正載入中文字的判斷
 async function sendAiQuestion(){
   const input = document.getElementById("aiQuestion");
   const question = input.value.trim();
@@ -1397,9 +1425,11 @@ async function sendAiQuestion(){
     return;
   }
 
+  // 使用者輸入
   addAiMessage(question, "ai-user");
   input.value = "";
-
+  
+  // 思考中提示
   const loadingText = "AI 小幫手思考中...";
   addAiMessage(loadingText, "ai-bot");
 
@@ -1414,12 +1444,20 @@ async function sendAiQuestion(){
     });
 
     const result = await response.json();
-    loadingEl.remove();
+    
+    // 移除「思考中...」的元素
+    if (loadingEl && loadingEl.parentNode === messages) {
+      loadingEl.remove();
+    }
 
+    // 顯示 AI 回傳的真正答案
     addAiMessage(result.answer || "AI 沒有回傳內容，請稍後再試。", "ai-bot");
 
   }catch(error){
-    loadingEl.remove();
+    // 發生錯誤時移除動畫並提示
+    if (loadingEl && loadingEl.parentNode === messages) {
+      loadingEl.remove();
+    }
     addAiMessage("無法連接 AI 服務，請確認 Python 後端有正常執行。", "ai-bot");
   }
 }
