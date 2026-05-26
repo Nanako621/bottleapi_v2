@@ -55,6 +55,7 @@ CID  = "subscriber-stu1-001"
 data_buffer = {}
 buffer_lock = threading.Lock()
 current_user_email = None  # 初始為 None，表示未登入
+latest_payload = {}
 
 
 def make_tls():
@@ -184,6 +185,7 @@ def maintenance_task():
             
             
 def broadcaster():
+    global latest_payload
     """從 inbox 取出字串，送到所有 WebSocket client，並處理 5 分鐘數據彙整"""
     sent_counter = 0
     while True:
@@ -192,13 +194,22 @@ def broadcaster():
         except queue.Empty:
             gsleep(0.05)
             continue
+        try:
+            raw_data = json.loads(msg)
+            payload = raw_data.get("payload")
+            if isinstance(payload, dict):
+               latest_payload = payload
+        except Exception as e:
+            logging.debug(f"[latest_payload] 更新失敗: {e}")
 
         # --- [邏輯優化] 只有登入後才處理數據存儲 ---
         if current_user_email is not None:
             try:
                 raw_data = json.loads(msg)
                 payload = raw_data.get("payload")
+
                 if isinstance(payload, dict):
+                    latest_payload = payload
                     email = current_user_email  # 強制使用目前登入的帳號，防止數據誤植
                     
                     hr = payload.get("heart_rate")
@@ -587,6 +598,18 @@ def handle_contact():
 def chatgpt_assistant():
     data = request.json or {}
     question = data.get("question", "").strip()
+    health_context = f"""
+目前即時健康數據如下：
+心率：{latest_payload.get('heart_rate', '無資料')} bpm
+步數：{latest_payload.get('steps', '無資料')} steps
+運動時間：{latest_payload.get('active_minutes', '無資料')} 分鐘
+睡眠時數：{latest_payload.get('sleep_hours', '無資料')} 小時
+睡眠品質：{latest_payload.get('sleep_quality', '無資料')} / 100
+久坐時間：{latest_payload.get('sedentary_time', '無資料')} 分鐘
+卡路里：{latest_payload.get('calories', '無資料')} kcal
+血氧：{latest_payload.get('spo2', '無資料')} %
+HRV：{latest_payload.get('hrv', '無資料')} ms
+"""
 
     if not question:
         response.status = 400
@@ -604,8 +627,8 @@ def chatgpt_assistant():
     try:
         result = gemini_client.models.generate_content(
             model="gemini-2.5-flash-lite",
-            contents=system_prompt + "\n\n使用者問題：" + question
-        )
+            contents=system_prompt + "\n\n" + health_context + "\n\n使用者問題：" + question        
+ )
 
         return {
             "status": "success",
