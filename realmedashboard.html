@@ -715,15 +715,6 @@
         <a class="nav-link" href="#">趨勢觀察</a>
         <div class="menu">
           <button class="nav-link" onclick="openAiPanel()">AI 健康問答</button>
-          <button class="menu-btn" id="menuToggle">AI 小幫手 ▾</button>
-          <div class="menu-panel" id="menuPanel" aria-hidden="true">
-            <button class="action-btn a-urgent" data-action="urgent">立即提醒</button>
-            <button class="action-btn a-drip" data-action="change_drip">活動建議</button>
-            <button class="action-btn a-leak" data-action="drip_leak">睡眠提醒</button>
-            <button class="action-btn a-fix" data-action="repair">壓力舒緩</button>
-            <button class="action-btn a-toilet" data-action="toilet">久坐提醒</button>
-            <button class="action-btn a-clean" data-action="clean">健康摘要</button>
-          </div>
         </div>
       </div>
     </div>
@@ -1388,13 +1379,23 @@ function closeAiPanel(){
   }
 }
 
-// 💡 新增：將 **文字** 轉換成 <strong>文字</strong> 的解析函式
+// 簡單的將 **文字** 替換成 <strong>文字</strong> 的函式
 function parseMarkdown(text) {
-  if (!text) return "";
-  // 1. 將 1. 2. 3. 或 * 等換行標籤做簡單換行處理 (可選，讓排版更好看)
-  let formattedText = text.replace(/\n/g, '<br>');
-  // 2. 使用正規表達式將 **粗體內容** 替換成 <strong>粗體內容</strong>
-  return formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    if (!text) return "";
+    // 將 **文字** 替換為 <strong>文字</strong>
+    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
+function addAiMessage(text, type){
+  const box = document.getElementById("aiMessages");
+  const div = document.createElement("div");
+  div.className = "ai-msg " + type;
+  
+  // 💡 修正：改用 innerHTML 並透過 parseMarkdown 處理，才能觸發粗體標籤
+  div.innerHTML = parseMarkdown(text); 
+  
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
 }
 
 // 🛠️ 修改後的 addAiMessage
