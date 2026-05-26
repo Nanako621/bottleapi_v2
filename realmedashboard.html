@@ -210,7 +210,7 @@
       align-items:center;
       flex-wrap:wrap;
       gap:12px;
-      font-weight:600;
+      font-weight:normal;
     }
 
     .hero-pill{
@@ -324,7 +324,7 @@
     .grid-title span{
       font-size:15px;
       color:#89a0b0;
-      font-weight:400;
+      font-weight:normal;
     }
 
     .grid{
@@ -396,7 +396,7 @@
       margin:0;
       font-size:21px;
       color:#6784a1;
-      font-weight:600;
+      font-weight:normal;
     }
 
     .value-row{
@@ -407,7 +407,7 @@
 
     .value{
       font-size:40px;
-      font-weight:700;
+      font-weight:normal;
       color:#58789a;
       line-height:1;
     }
@@ -421,7 +421,7 @@
 
     .abnormal{
       color:var(--danger)!important;
-      font-weight:800;
+      font-weight:normal;
     }
 
     .chart-wrap{
@@ -479,7 +479,7 @@
       border:none;
       cursor:pointer;
       width:100%;
-      font-weight:600;
+      font-weight:normal;
       font-size:16px;
       color:#ffffff;
       font-family:inherit;
@@ -518,6 +518,18 @@
       box-shadow:0 18px 40px rgba(76,110,130,0.18);
       border:1px solid rgba(122,188,198,0.16);
     }
+    
+    /* ===== 強制修正最上方標題與 BMI 建議文字為一般字體 ===== */
+    .brand-title, 
+    #bmi_note, 
+    .bmi-good, 
+    .bmi-warn, 
+    .bmi-bad,
+    #bmi_note *,
+    .panel-card * {
+      font-weight: normal !important;
+      -webkit-text-stroke: 0px transparent !important;
+    }
 
 /* ===== AI 健康問答側邊視窗 ===== */
 #aiPanel {
@@ -550,7 +562,7 @@
 
 .ai-panel-title {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: normal;
   color: #5d7ea1;
 }
 
