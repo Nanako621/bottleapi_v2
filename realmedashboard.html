@@ -8,10 +8,19 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
   
+    /* 1. 常規體 */
     @font-face {
       font-family: 'ProperScript';
       src: url('ProperScript-Regular.ttf') format('truetype');
-      font-weight: normal;
+      font-weight: normal; /* 或是 400 */
+      font-style: normal;
+    }
+
+    /* 2. 粗體（新增這段） */
+    @font-face {
+      font-family: 'ProperScript';
+      src: url('ProperScript-Bold.ttf') format('truetype'); /* 請確保有這個檔案 */
+      font-weight: bold; /* 或是 700 */
       font-style: normal;
     }
 
@@ -509,6 +518,7 @@
       box-shadow:0 18px 40px rgba(76,110,130,0.18);
       border:1px solid rgba(122,188,198,0.16);
     }
+
 /* ===== AI 健康問答側邊視窗 ===== */
 #aiPanel {
   position: fixed;
@@ -634,6 +644,7 @@
     right: -92vw;
   }
 }
+
     #eduModal .modal-body {
       flex: 1;
       overflow-y: auto;
@@ -699,12 +710,19 @@
         </div>
       </div>
       <div class="nav-links">
-        <div class="nav-links">
-          <a class="nav-link" href="iot_intro.html">返回主畫面</a>
-          <a class="nav-link active" href="#">健康儀表板</a>
-          <a class="nav-link" href="#">趨勢觀察</a>
+        <a class="nav-link" href="/">返回主畫面</a>
+        <a class="nav-link active" href="#">健康儀表板</a>
+        <a class="nav-link" href="#">趨勢觀察</a>
+        <div class="menu">
           <button class="nav-link" onclick="openAiPanel()">AI 健康問答</button>
+          <button class="menu-btn" id="menuToggle">AI 小幫手 ▾</button>
           <div class="menu-panel" id="menuPanel" aria-hidden="true">
+            <button class="action-btn a-urgent" data-action="urgent">立即提醒</button>
+            <button class="action-btn a-drip" data-action="change_drip">活動建議</button>
+            <button class="action-btn a-leak" data-action="drip_leak">睡眠提醒</button>
+            <button class="action-btn a-fix" data-action="repair">壓力舒緩</button>
+            <button class="action-btn a-toilet" data-action="toilet">久坐提醒</button>
+            <button class="action-btn a-clean" data-action="clean">健康摘要</button>
           </div>
         </div>
       </div>
@@ -875,15 +893,6 @@
   </main>
 </div>
 
-<div id="eduModal">
-  <div class="modal-content">
-    <div class="modal-body">
-      <div id="eduTextTitle"></div>
-      <div id="eduTextContent"></div>
-    </div>
-    <button class="close-btn" onclick="closeEdu()">返回主頁</button>
-  </div>
-</div>
 
 <script>
 const buffers = {
@@ -915,7 +924,7 @@ function pushBuffer(key, value){
 
   document.getElementById("patient-info-name").innerText = name;
   document.getElementById("patient-info-detail").innerText =
-  `性別：${gender} ｜ 出生：${birth || "未填寫"}`;
+  `性別：${gender}    出生：${birth || "未填寫"}`;
 })();
 document.getElementById("edit-info-btn").addEventListener("click", () => {
   localStorage.setItem("edit_mode", "info");
@@ -1228,9 +1237,7 @@ function onNewMeasurement(payload){
     sedentary_time: 'sedentary_time',
     calories: 'calories',
     spo2: 'spo2',
-    hrv: 'hrv',
-    height: 'height',
-    weight: 'weight'
+    hrv: 'hrv'
   };
 
   for(const k in map){
@@ -1242,13 +1249,6 @@ function onNewMeasurement(payload){
         pushBuffer(target, v);
       }
     }
-  }
-
-  if(state.height){
-    document.getElementById("height").innerText = state.height;
-  }
-  if(state.weight){
-    document.getElementById("weight").innerText = state.weight;
   }
 
   renderValues();
@@ -1366,25 +1366,56 @@ document.querySelectorAll('.action-btn').forEach(btn=>{
     }
   });
 });
+
+// 確保你的程式碼是這樣寫的
 function openAiPanel(){
-  document.getElementById("aiPanel").classList.add("active");
-  document.getElementById("aiOverlay").classList.add("active");
+  const panel = document.getElementById("aiPanel");
+  const overlay = document.getElementById("aiOverlay");
+  if(panel && overlay){
+    panel.classList.add("active");
+    overlay.classList.add("active");
+    overlay.style.display = "block"; // 強制顯示，防止 CSS 沒抓到
+  }
 }
 
 function closeAiPanel(){
-  document.getElementById("aiPanel").classList.remove("active");
-  document.getElementById("aiOverlay").classList.remove("active");
+  const panel = document.getElementById("aiPanel");
+  const overlay = document.getElementById("aiOverlay");
+  if(panel && overlay){
+    panel.classList.remove("active");
+    overlay.classList.remove("active");
+    overlay.style.display = "none";
+  }
 }
 
+// 💡 新增：將 **文字** 轉換成 <strong>文字</strong> 的解析函式
+function parseMarkdown(text) {
+  if (!text) return "";
+  // 1. 將 1. 2. 3. 或 * 等換行標籤做簡單換行處理 (可選，讓排版更好看)
+  let formattedText = text.replace(/\n/g, '<br>');
+  // 2. 使用正規表達式將 **粗體內容** 替換成 <strong>粗體內容</strong>
+  return formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
+// 🛠️ 修改後的 addAiMessage
 function addAiMessage(text, type){
   const box = document.getElementById("aiMessages");
   const div = document.createElement("div");
   div.className = "ai-msg " + type;
-  div.innerText = text;
+  
+  // 💡 修正：如果是 AI 的回覆 (ai-bot)，就解析 Markdown 語法使其支援粗體
+  // 如果是使用者自己輸入的，就維持純文字或同樣解析
+  if (type === "ai-bot") {
+    div.innerHTML = parseMarkdown(text);
+  } else {
+    div.innerText = text; 
+  }
+  
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
 
+// 🛠️ sendAiQuestion 維持邏輯，但修正載入中文字的判斷
 async function sendAiQuestion(){
   const input = document.getElementById("aiQuestion");
   const question = input.value.trim();
@@ -1394,9 +1425,11 @@ async function sendAiQuestion(){
     return;
   }
 
+  // 使用者輸入
   addAiMessage(question, "ai-user");
   input.value = "";
-
+  
+  // 思考中提示
   const loadingText = "AI 小幫手思考中...";
   addAiMessage(loadingText, "ai-bot");
 
@@ -1411,12 +1444,20 @@ async function sendAiQuestion(){
     });
 
     const result = await response.json();
-    loadingEl.remove();
+    
+    // 移除「思考中...」的元素
+    if (loadingEl && loadingEl.parentNode === messages) {
+      loadingEl.remove();
+    }
 
+    // 顯示 AI 回傳的真正答案
     addAiMessage(result.answer || "AI 沒有回傳內容，請稍後再試。", "ai-bot");
 
   }catch(error){
-    loadingEl.remove();
+    // 發生錯誤時移除動畫並提示
+    if (loadingEl && loadingEl.parentNode === messages) {
+      loadingEl.remove();
+    }
     addAiMessage("無法連接 AI 服務，請確認 Python 後端有正常執行。", "ai-bot");
   }
 }
@@ -1428,12 +1469,21 @@ document.addEventListener("keydown", function(e){
 });
 </script>
 <div id="aiOverlay" onclick="closeAiPanel()"></div>
-
 <div id="aiPanel">
   <div class="ai-panel-header">
     <div class="ai-panel-title">AI 健康問答</div>
     <button class="ai-close" onclick="closeAiPanel()">關閉</button>
   </div>
+  
+<div id="eduModal">
+  <div class="modal-content">
+    <div class="modal-body">
+      <div id="eduTextTitle"></div>
+      <div id="eduTextContent"></div>
+    </div>
+    <button class="close-btn" onclick="closeEdu()">返回主頁</button>
+  </div>
+</div>
 
   <div class="ai-messages" id="aiMessages">
     <div class="ai-msg ai-bot">
